@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The admin-specific functionality of the plugin.
+ * Admin class used to build our plugin settings page
  *
  * @link       https://www.vangus-agency.com
  * @since      1.0.0
@@ -11,10 +11,7 @@
  */
 
 /**
- * The admin-specific functionality of the plugin.
- *
- * Defines the plugin name, version, and two examples hooks for how to
- * enqueue the admin-specific stylesheet and JavaScript.
+ * Admin class used to build our plugin settings page
  *
  * @package    Infast_Woocommerce
  * @subpackage Infast_Woocommerce/admin
@@ -31,51 +28,10 @@ class Infast_Woocommerce_Admin_Settings {
 	}
 
 	/**
-	 * Register the stylesheets for the admin area.
+	 * Register our settings page
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_styles() {
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Infast_Woocommerce_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Infast_Woocommerce_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/infast-woocommerce-admin.css', array(), $this->version, 'all' );
-
-	}
-
-	/**
-	 * Register the JavaScript for the admin area.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_scripts() {
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Infast_Woocommerce_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Infast_Woocommerce_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/infast-woocommerce-admin.js', array( 'jquery' ), $this->version, false );
-
-	}
-
 	public function register_admin_page() {
 
 	    add_submenu_page(
@@ -89,6 +45,11 @@ class Infast_Woocommerce_Admin_Settings {
 
 	}
 
+	/**
+	 * Adding our section with multiple fields to our settings page
+	 *
+	 * @since    1.0.0
+	 */
 	public function register_sections() {
 
 	    register_setting(
@@ -129,6 +90,11 @@ class Infast_Woocommerce_Admin_Settings {
 
 	}
 
+	/**
+	 * HTML render of Client ID field
+	 *
+	 * @since    1.0.0
+	 */
 	public function infast_woocommerce_client_id_render() {
 
 	    $options = get_option( 'infast_woocommerce' );
@@ -138,6 +104,11 @@ class Infast_Woocommerce_Admin_Settings {
 
 	}
 
+	/**
+	 * HTML render of Client secret field
+	 *
+	 * @since    1.0.0
+	 */
 	public function infast_woocommerce_client_secret_render() {
 
 	    $options = get_option( 'infast_woocommerce' );
@@ -147,6 +118,11 @@ class Infast_Woocommerce_Admin_Settings {
 
 	}
 
+	/**
+	 * HTML render of Enable email field
+	 *
+	 * @since    1.0.0
+	 */
 	public function infast_woocommerce_enable_email_render() {
 
 	    $options = get_option( 'infast_woocommerce' );
@@ -156,9 +132,19 @@ class Infast_Woocommerce_Admin_Settings {
 
 	}
 
+	/**
+	 * HTML render of our section
+	 *
+	 * @since    1.0.0
+	 */
 	public function infast_woocommerce_section_callback() {
 	}
 
+	/**
+	 * Sanitize the user inputs
+	 *
+	 * @since    1.0.0
+	 */
 	public function infast_sanitize_inputs( $input ) {
 
 		$output = array();
@@ -168,10 +154,15 @@ class Infast_Woocommerce_Admin_Settings {
 		    }   
 		}
 
-		return apply_filters( 'sandbox_theme_validate_input_examples', $output, $input );
+		return $output;
 
 	}
 
+	/**
+	 * HTML render of our settings page
+	 *
+	 * @since    1.0.0
+	 */
 	public function infast_woocommerce_page() {
 
 		settings_errors();
@@ -189,6 +180,11 @@ class Infast_Woocommerce_Admin_Settings {
 
 	}
 
+	/**
+	 * Generate a new OAuth2 token when client ID and/or secret has been updated
+	 *
+	 * @since    1.0.0
+	 */
 	public function infast_option_updated( $option, $old_value, $value ) {
 
 		if ( $option == 'infast_woocommerce' ) {

@@ -61,19 +61,8 @@ class Infast_Woocommerce_Admin {
 	 */
 	public function enqueue_styles() {
 
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Infast_Woocommerce_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Infast_Woocommerce_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/infast-woocommerce-admin.css', array(), $this->version, 'all' );
+		// We don't use any CSS in admin yet
+		//wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/infast-woocommerce-admin.css', array(), $this->version, 'all' );
 
 	}
 
@@ -84,22 +73,16 @@ class Infast_Woocommerce_Admin {
 	 */
 	public function enqueue_scripts() {
 
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Infast_Woocommerce_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Infast_Woocommerce_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/infast-woocommerce-admin.js', array( 'jquery' ), $this->version, false );
+		// We don't use any JS in admin yet
+		//wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/infast-woocommerce-admin.js', array( 'jquery' ), $this->version, false );
 
 	}
 
+	/**
+	 * Call our specific INFast API class to run the process of creating a new invoice
+	 *
+	 * @since    1.0.0
+	 */
 	public function generate_invoice( $order_id ) {
 
 		$infast_api = Infast_Woocommerce_Api::getInstance();

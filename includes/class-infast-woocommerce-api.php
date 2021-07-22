@@ -1,10 +1,8 @@
 <?php
 
 /**
- * The file that defines the core plugin class
+ * The file that defines the class interacting with INFast API
  *
- * A class definition that includes attributes and functions used across both the
- * public-facing side of the site and the admin area.
  *
  * @link       https://www.vangus-agency.com
  * @since      1.0.0
@@ -14,13 +12,9 @@
  */
 
 /**
- * The core plugin class.
+ * The file that defines the class interacting with INFast API
  *
- * This is used to define internationalization, admin-specific hooks, and
- * public-facing site hooks.
- *
- * Also maintains the unique identifier of this plugin as well as the current
- * version of the plugin.
+ * Theses functions allow the communication with INFast throught their API (OAuth2 authentification, create a customer, create au document, ...)
  *
  * @since      1.0.0
  * @package    Infast_Woocommerce
@@ -29,6 +23,11 @@
  */
 class Infast_Woocommerce_Api {
 
+    /**
+     * This class in a Singleton, so you can access it from anywhere else with Infast_Woocommerce_Api::getInstance();
+     *
+     * @since    1.0.0
+     */
     private static $instance = null;
 
     private function __construct() {
@@ -42,6 +41,12 @@ class Infast_Woocommerce_Api {
         return self::$instance;
     }
 
+    /**
+     * Get the OAuth2 token used to authenticate INFast API calls. Generate it if needed.
+     *
+     * @since    1.0.0
+     * @param      bool    $override       Force Oauth2 token regeneration
+     */
     public function get_oauth2_token( $override = false ) {
 
         if ( $override == false ) {
@@ -71,11 +76,14 @@ class Infast_Woocommerce_Api {
 
         $resp = curl_exec( $curl );
         if ( curl_errno( $curl ) ) {
+
             error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . curl_error( $curl ) );
             update_option( 'infast_access_token', false );
             curl_close( $curl );
             return false;
+
         } else {
+
             $resp = json_decode( $resp, true );
             if ( is_array( $resp ) && array_key_exists( 'access_token', $resp ) ){
                 $access_token = $resp['access_token'];
@@ -93,16 +101,46 @@ class Infast_Woocommerce_Api {
 
     }
 
+    /**
+     * Manage to process to create a new invoice on INFast from a WooCommercer order ID, including creating a new customer on INFast first
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID used to create the invoice on INFast
+     */
     public function generate_invoice( $order_id ) {
 
         $customer_id = $this->create_customer( $order_id );
-        if ( $customer_id )
-            $this->create_document( $order_id, $customer_id );
+        if ( $customer_id ) {
+            $document_id = $this->create_document( $order_id, $customer_id );
+            if ( $document_id ) {
+                $this->add_document_payment( $order_id, $document_id );
+
+                $options = get_option( 'infast_woocommerce' );
+                if ( $options['enable_email'] ) {
+                    $this->send_document_email( $order_id, $document_id );
+                }
+            }
+        }
+
     }
 
+    /**
+     * Create a document on INFast
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID used to create the invoice on INFast
+     * @param      string    $customer_id       INFast customer ID previously created
+     * @param      bool    $force       Force OAuth2 token regeneration
+     */
     private function create_document( $order_id, $customer_id, $force = false ) {
 
+        $order = wc_get_order( $order_id );
+
         $access_token = $this->get_oauth2_token( $force );
+        if ( $access_token == false ) {
+            $order->add_order_note( 'INFast API: Document not created, check INFast settings if your Client ID and Client secret are valid' );
+            return false;
+        }
 
         $data = $this->create_document_prepare_data( $order_id, $customer_id );
 
@@ -129,31 +167,37 @@ class Infast_Woocommerce_Api {
         curl_close( $curl );
 
         if ( $code == 401) { // access_token is expired
-            $this->create_document( $order_id, $customer_id, true );
-            return;
+            return $this->create_document( $order_id, $customer_id, true );
+            
         }
 
-        $order = wc_get_order( $order_id );
         if ( $err ) {
             $order->add_order_note( 'INFast API: Document created error:' . $err );
+            return false;
         } else {
-            $order->add_order_note( 'INFast API: Document created' );
-            $order->add_order_note( $response );
+            $response = json_decode( $response, true );
+            $document_id = $response['_id'];
+            $order->add_order_note( 'INFast API: Document created ' . $document_id );
+            return $document_id;
         }
 
     }
 
-    /*
+    /**
      * Fill an array with all data needed to call the API to create a document
      * Full parameters list: https://infast.docs.stoplight.io/api-reference/documents/createdocument
-    */
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID used to create the invoice on INFast
+     * @param      string    $customer_id       INFast customer ID previously created
+     */
     private function create_document_prepare_data( $order_id, $customer_id ) {
 
         $order = wc_get_order( $order_id );
 
         $data = array();
         $data['type'] = 'INVOICE';
-        $data['status'] = 'ACCEPTED';
+        // $data['status'] = 'ACCEPTED';
         $data['customerId'] = $customer_id;
         $data['refInt'] = strval( $order_id );
         $data['emitDate'] = date( DATE_ISO8601, strtotime('today'));
@@ -222,9 +266,22 @@ class Infast_Woocommerce_Api {
 
     }
 
+    /**
+     * Create a customer on INFast
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID used to create the customer on INFast
+     * @param      bool    $force       Force OAuth2 token regeneration
+     */
     private function create_customer( $order_id, $force = false ) {
 
+        $order = wc_get_order( $order_id );
+
         $access_token = $this->get_oauth2_token( $force );
+        if ( $access_token == false ) {
+            $order->add_order_note( 'INFast API: Document not created, check INFast settings if your Client ID and Client secret are valid' );
+            return false;
+        }
 
         $data = $this->create_customer_prepare_data( $order_id );
 
@@ -251,11 +308,9 @@ class Infast_Woocommerce_Api {
         curl_close( $curl );
 
         if ( $code == 401) { // access_token is expired
-            $this->create_customer( $order_id, true );
-            return;
+            return $this->create_customer( $order_id, true );
         }
 
-        $order = wc_get_order( $order_id );
         if ($err) {
             $order->add_order_note( 'INFast API: Customer created error:' . $err );
             return false;
@@ -268,10 +323,13 @@ class Infast_Woocommerce_Api {
 
     }
 
-    /*
-     * Fill an array with all data needed to call the API to create a document
-     * https://infast.docs.stoplight.io/api-reference/customers/createcustomer
-    */
+    /**
+     * Fill an array with all data needed to call the API to create a customer
+     * Full parameters list: https://infast.docs.stoplight.io/api-reference/documents/createcustomer
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID used to create the invoice on INFast
+     */
     private function create_customer_prepare_data( $order_id ) {
 
         $order = wc_get_order( $order_id );
@@ -299,6 +357,144 @@ class Infast_Woocommerce_Api {
 
     }
 
+    /**
+     * Add a payment on INFast
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID used to get payment infos
+     * @param      int    $document_id       INFast document ID used to add a payment on INFast
+     * @param      bool    $force       Force OAuth2 token regeneration
+     */
+    private function add_document_payment( $order_id, $document_id, $force = false ) {
+
+        $order = wc_get_order( $order_id );
+
+        $access_token = $this->get_oauth2_token( $force );
+        if ( $access_token == false ) {
+            $order->add_order_note( 'INFast API: Document payment not created, check INFast settings if your Client ID and Client secret are valid' );
+            return false;
+        }
+
+        $data = $this->add_document_payment_prepare_data( $order_id );
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => INFAST_API_URL . 'api/v1/documents/' . $document_id . '/payment',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => array(
+                'authorization: Bearer ' . $access_token,
+                'content-type: application/json'
+            ),
+        ));
+
+        $response = curl_exec( $curl );
+        $err = curl_error( $curl );
+        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        curl_close( $curl );
+
+        if ( $code == 401) { // access_token is expired
+            return $this->add_document_payment( $order_id, $document_id, true );
+        }
+
+        if ($err) {
+            $order->add_order_note( 'INFast API: Add payment error:' . $err );
+            return false;
+        } else {
+            $response = json_decode( $response, true );
+            $payment_id = $response['_id'];
+            $order->add_order_note( 'INFast API: Payment added ' . $payment_id );
+            return $payment_id;
+        }
+
+    }
+
+    /**
+     * Fill an array with all data needed to call the API to add a payment
+     * Full parameters list: https://infast.docs.stoplight.io/api-reference/documents/addpaymentoninvoice
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID used to create the invoice on INFast
+     */
+    private function add_document_payment_prepare_data( $order_id ) {
+
+        $order = wc_get_order( $order_id );
+
+        $data = array();
+        $data['payment'] = array();
+        $data['payment']['method'] = 'OTHER';
+        $data['payment']['info'] = $order->get_payment_method();  
+
+        return $data;
+
+    }
+
+    /**
+     * Send INFast document by email
+     *
+     * @since    1.0.0
+     * @param      int    $order_id       WooCommerce order ID
+     * @param      int    $document_id       INFast document ID
+     * @param      bool    $force       Force OAuth2 token regeneration
+     */
+    private function send_document_email( $order_id, $document_id, $force = false ) {
+
+        $order = wc_get_order( $order_id );
+
+        $access_token = $this->get_oauth2_token( $force );
+        if ( $access_token == false ) {
+            $order->add_order_note( 'INFast API: Document not sent by email, check INFast settings if your Client ID and Client secret are valid' );
+            return false;
+        }
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => INFAST_API_URL . 'api/v1/documents/' . $document_id . '/email',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => array(
+                'authorization: Bearer ' . $access_token,
+                'content-type: application/json'
+            ),
+        ));
+
+        $response = curl_exec( $curl );
+        $err = curl_error( $curl );
+        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        curl_close( $curl );
+
+        if ( $code == 401) { // access_token is expired
+            return $this->send_document_email( $order_id, $document_id, true );
+        }
+
+        if ($err) {
+            $order->add_order_note( 'INFast API: Send document by email error:' . $err );
+            return false;
+        } else {
+            $response = json_decode( $response, true );
+            $email_id = $response['_id'];
+            $order->add_order_note( 'INFast API: Document sent by email ' . $email_id );
+            return $email_id;
+        }
+
+    }
+
+    /**
+     * Check if a country is outside European Union. Can be used for VAT purpose.
+     *
+     * @since    1.0.0
+     * @param      string    $country_code       Country code to check (same format that the one used by WooCommerce)
+     */
     private function is_outside_EU( $country_code ) {
 
         $eu_country_codes = array(

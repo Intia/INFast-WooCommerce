@@ -111,6 +111,9 @@ class Infast_Woocommerce {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-infast-woocommerce-i18n.php';
 
+		/**
+		 * The class responsible for manage calls to INFast API
+		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-infast-woocommerce-api.php';
 
 		/**
@@ -161,7 +164,6 @@ class Infast_Woocommerce {
 	private function define_admin_hooks() {
 
 		$plugin_admin = new Infast_Woocommerce_Admin( $this->get_plugin_name(), $this->get_version() );
-
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'woocommerce_checkout_order_processed', $plugin_admin, 'generate_invoice', 10, 1 );
@@ -183,7 +185,6 @@ class Infast_Woocommerce {
 	private function define_public_hooks() {
 
 		$plugin_public = new Infast_Woocommerce_Public( $this->get_plugin_name(), $this->get_version() );
-
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 
