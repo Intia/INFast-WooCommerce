@@ -1,0 +1,64 @@
+version: "3.3"
+
+services:
+
+  wordpress:
+    container_name: wordpress
+    image: wordpress:latest
+    depends_on:
+      - database
+    volumes:
+      - wordpress:/var/www/html/
+      - .:/usr/src/wordpress/wp-content/plugins/infast-woocommerce/
+    ports:
+      - "8080:80"
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: database
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: password
+
+  configure:
+    container_name: configure
+    image: wordpress:cli
+    user: "33:33" # same as wordpress container
+    depends_on:
+      - wordpress
+    volumes:
+      - .docker/:/scripts/
+      - wordpress:/var/www/html/ # shared with wordpress service
+    environment:
+      WORDPRESS_DB_HOST: database
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: password
+    command: /scripts/configure.sh
+
+  database:
+    container_name: database
+    image: mysql:5.7
+    restart: always
+    volumes:
+      - database:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: password
+
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - database
+    ports:
+      - 8081:80
+    environment:
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      PMA_HOST: database
+      UPLOAD_LIMIT: 128M
+
+volumes:
+  database:
+  wordpress:
