@@ -31,6 +31,18 @@ class Infast_Woocommerce_Activator {
 	 */
 	public static function activate() {
 
+        $stored_saltkey1 = get_option( 'infast_saltkey_1' );
+        if ( ! $stored_saltkey1 || empty( $stored_saltkey1 ) ) {
+            $salt_key1 = bin2hex( random_bytes( 20 ) );
+            add_option( 'infast_saltkey_1', $salt_key1, 'no' );            
+        }
+
+        $stored_saltkey2 = get_option( 'infast_saltkey_2' );
+        if ( ! $stored_saltkey2 || empty( $stored_saltkey2 ) ) {
+            $salt_key2 = bin2hex( random_bytes( 20 ) );
+            add_option( 'infast_saltkey_2', $salt_key2, 'no' );            
+        }
+
 	}
 
 }

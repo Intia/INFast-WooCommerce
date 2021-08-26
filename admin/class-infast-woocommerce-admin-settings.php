@@ -24,7 +24,10 @@ class Infast_Woocommerce_Admin_Settings {
 	 *
 	 * @since    1.0.0
 	 */
-	public function __construct() {
+	public function __construct( $admin ) {
+
+		$this->admin = $admin;
+
 	}
 
 	/**
@@ -88,6 +91,14 @@ class Infast_Woocommerce_Admin_Settings {
 	        'infast_woocommerce_section'
 	    );
 
+	    add_settings_field(
+	        'infast_woocommerce_cc_email',
+	        __( 'Envoyer une copie des emails à cet adresse', 'infast-woocommerce' ),
+	        array( $this, 'infast_woocommerce_cc_email_render' ),
+	        'infast-woocommerce',
+	        'infast_woocommerce_section'
+	    );
+
 	}
 
 	/**
@@ -112,8 +123,9 @@ class Infast_Woocommerce_Admin_Settings {
 	public function infast_woocommerce_client_secret_render() {
 
 	    $options = get_option( 'infast_woocommerce' );
+	    $value = $options['client_secret'];
 	    ?>
-	    <input type='text' name='infast_woocommerce[client_secret]' value='<?php echo $options['client_secret']; ?>'>
+	    <input type='text' name='infast_woocommerce[client_secret]' value='<?php echo $value; ?>'>
 	    <?php
 
 	}
@@ -128,6 +140,20 @@ class Infast_Woocommerce_Admin_Settings {
 	    $options = get_option( 'infast_woocommerce' );
 	    ?>
 	    <input type="checkbox" name="infast_woocommerce[enable_email]" value="1" <?php if ( isset( $options['enable_email'] ) ) checked( $options['enable_email'], 1 ); ?>
+		<?php
+
+	}
+
+	/**
+	 * HTML render of CC email field
+	 *
+	 * @since    1.0.0
+	 */
+	public function infast_woocommerce_cc_email_render() {
+
+	    $options = get_option( 'infast_woocommerce' );
+	    ?>
+	    <input type="email" name="infast_woocommerce[cc_email]" value="<?php if ( isset ( $options['cc_email'] ) ) echo $options['cc_email']; ?>" />
 		<?php
 
 	}
@@ -148,14 +174,39 @@ class Infast_Woocommerce_Admin_Settings {
 	public function infast_sanitize_inputs( $input ) {
 
 		$output = array();
-		foreach( $input as $key => $value ) {
-		    if( isset( $input[$key] ) ) {
-		        $output[$key] = strip_tags( stripslashes( $input[ $key ] ) );
+		foreach( $input as $idx => $value ) {
+		    if( isset( $input[$idx] ) ) {
+
+		    	if ( $idx == 'client_secret' ) {
+		    		if ( $input[$idx] == get_option( 'infast_woocommerce' )['client_secret'] ) {
+			    		$output[$idx] = get_option( 'infast_woocommerce' )['client_secret'];
+			    	} else {
+			    		$output[$idx] = $this->encrypt_key( $value );
+			    	}
+		    	} else {
+		        	$output[$idx] = strip_tags( stripslashes( $input[ $idx ] ) );
+		    	}
 		    }   
 		}
 
 		return $output;
 
+	}
+
+	/**
+	 * Encrypt a key
+	 *
+	 * @since    1.0.0
+	 * @param    string     $string    key to encrypt
+	 */
+	public function encrypt_key( $string )
+	{
+	    $encrypt_method = 'AES-256-CBC';
+	    $key = hash( 'sha256',  get_option( 'infast_saltkey_1' ) );
+	    $iv = substr( hash( 'sha256',  get_option( 'infast_saltkey_2' ) ), 0, 16 ); // sha256 is hash_hmac_algo
+	    $output = openssl_encrypt( $string, $encrypt_method, $key, 0, $iv );
+	    $output = base64_encode( $output );
+	    return $output;
 	}
 
 	/**
@@ -176,6 +227,9 @@ class Infast_Woocommerce_Admin_Settings {
 	        ?>
 
 	    </form>
+
+	    <h2><?php _e( 'Synchroniser les produits', 'infast-woocommerce' ); ?></h2>
+	    <button type="button" class="button button-primary infast-syncall-btn"><?php _e( 'Lancer la synchronisation', 'infast-woocommerce' ); ?></button>
 	    <?php
 
 	}
@@ -201,6 +255,36 @@ class Infast_Woocommerce_Admin_Settings {
 
 			}
 		}
+
+	}
+
+	/**
+	 * Add custom field to shipping methods to store INFast ID
+	 *
+	 * @since    1.0.0
+	 */
+	public function infast_shipping_add_infast_id_field( $settings ) {
+
+	    $settings['infast_shipping_id'] = array(
+	        'title'       => esc_html__( 'INFast ID', 'flightbox' ),
+	        'type'        => 'hidden',
+	        'description' => '',
+	    );
+
+	    return $settings;
+	}
+
+	public function infast_shipping_add_infast_id_field_filter() {
+	    $shipping_methods = WC()->shipping->get_shipping_methods();
+	    foreach ( $shipping_methods as $shipping_method ) {
+	        add_filter( 'woocommerce_shipping_instance_form_fields_' . $shipping_method->id, array( $this, 'infast_shipping_add_infast_id_field' ) );
+	    }
+	}
+
+	public function infast_synchronise_all() {
+
+		$this->admin->synchronise_all();
+		wp_send_json_success();
 
 	}
 

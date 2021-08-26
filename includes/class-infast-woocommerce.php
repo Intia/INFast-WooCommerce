@@ -121,7 +121,6 @@ class Infast_Woocommerce {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-infast-woocommerce-admin.php';
 
-
 		/**
 		 * The class responsible for creating the admin settings page
 		 */
@@ -167,11 +166,16 @@ class Infast_Woocommerce {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'woocommerce_checkout_order_processed', $plugin_admin, 'generate_invoice', 10, 1 );
+		$this->loader->add_action( 'profile_update', $plugin_admin, 'update_user', 10, 2 );
+		$this->loader->add_action( 'woocommerce_update_customer', $plugin_admin, 'update_user', 10, 3 );
+		$this->loader->add_action( 'save_post_product', $plugin_admin, 'update_product', 10, 3 );
 
-		$plugin_admin_settings = new Infast_Woocommerce_Admin_Settings();
+		$plugin_admin_settings = new Infast_Woocommerce_Admin_Settings( $plugin_admin );
 		$this->loader->add_action( 'admin_menu', $plugin_admin_settings, 'register_admin_page' );
 		$this->loader->add_action( 'admin_init', $plugin_admin_settings, 'register_sections' );
 		$this->loader->add_action( 'updated_option', $plugin_admin_settings, 'infast_option_updated', 10, 3 );
+		$this->loader->add_action( 'admin_init', $plugin_admin_settings, 'infast_shipping_add_infast_id_field_filter' );
+		$this->loader->add_action( 'wp_ajax_infast_synchronise_all', $plugin_admin_settings, 'infast_synchronise_all' );
 
 	}
 

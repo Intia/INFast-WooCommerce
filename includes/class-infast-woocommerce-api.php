@@ -42,6 +42,21 @@ class Infast_Woocommerce_Api {
     }
 
     /**
+     * Decrypt key
+     *
+     * @since    1.0.0
+     * @param      string    $string       The key
+     */
+    protected function decrypt_key( $string )
+    {
+        $encrypt_method = 'AES-256-CBC';
+        $key = hash( 'sha256', get_option( 'infast_saltkey_1' ) );
+        $iv = substr( hash( 'sha256',  get_option( 'infast_saltkey_2' ) ), 0, 16 ); // sha256 is hash_hmac_algo
+        $output = openssl_decrypt( base64_decode( $string ), $encrypt_method, $key, 0, $iv );
+        return $output;
+    }
+
+    /**
      * Get the OAuth2 token used to authenticate INFast API calls. Generate it if needed.
      *
      * @since    1.0.0
@@ -68,8 +83,9 @@ class Infast_Woocommerce_Api {
         curl_setopt( $curl, CURLOPT_HTTPHEADER, $headers );
 
         $options = get_option( 'infast_woocommerce' );
+        $client_secret = $this->decrypt_key( $options['client_secret'] );
         $data = 'client_id=' . $options['client_id'];
-        $data .= '&client_secret=' . $options['client_secret'];
+        $data .= '&client_secret=' . $client_secret;
         $data .= '&grant_type=client_credentials&scope=write';
 
         curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
@@ -109,9 +125,16 @@ class Infast_Woocommerce_Api {
      */
     public function generate_invoice( $order_id ) {
 
-        $customer_id = $this->create_customer( $order_id );
-        if ( $customer_id ) {
-            $document_id = $this->create_document( $order_id, $customer_id );
+        $order = wc_get_order( $order_id );
+        $user_id = $order->get_user_id();
+        $infast_customer_id = get_user_meta( $user_id, '_infast_customer_id', true );
+
+        if ( ! $infast_customer_id ) {
+            $infast_customer_id = NULL;
+            $infast_customer_id = $this->create_customer( $user_id, $order_id, $infast_customer_id );
+        }
+        if ( $infast_customer_id ) {
+            $document_id = $this->create_document( $order_id, $infast_customer_id );
             if ( $document_id ) {
                 $this->add_document_payment( $order_id, $document_id );
 
@@ -139,6 +162,7 @@ class Infast_Woocommerce_Api {
         $access_token = $this->get_oauth2_token( $force );
         if ( $access_token == false ) {
             $order->add_order_note( 'INFast API: Document not created, check INFast settings if your Client ID and Client secret are valid' );
+            error_log( 'INFast API: Document not created, invalid client ID and/or client secret' );
             return false;
         }
 
@@ -173,6 +197,7 @@ class Infast_Woocommerce_Api {
 
         if ( $err ) {
             $order->add_order_note( 'INFast API: Document created error:' . $err );
+            error_log( 'INFast API: Document created error:' . $err );
             return false;
         } else {
             $response = json_decode( $response, true );
@@ -209,31 +234,36 @@ class Infast_Woocommerce_Api {
         $data['lines'] = array();
 
         foreach ( $order->get_items() as $item_id => $item ) {
+            
             $product = wc_get_product( $item->get_product_id() );
 
             $taxes = $tax->get_rates( $product->get_tax_class() );
             $rates = array_shift( $taxes );
-            $item_rate = round( array_shift( $rates ) );
+            $product_rate = array_shift( $rates );
+
+            $infast_product_id = get_post_meta( $product->get_id(), '_infast_product_id', true );
+
+            if ( ! $infast_product_id ) {
+                $infast_product_id = NULL;
+                $infast_product_id = $this->create_product( $product->get_id(), $infast_product_id );
+            }
 
             $data['lines'][] = array(
                 'lineType' => 'product',
-                'name' => $item->get_name(),
-                'price' => floatval( $product->get_price() ),
-                'vat' => $item_rate,
-                'reference' => $product->get_sku() ? $product->get_sku() : strval( $product->get_id() ),
-                'description' => $product->get_short_description(),
+                'productId' => $infast_product_id,
                 'quantity' => $item->get_quantity(),
                 'amount' => $item->get_total() - $item->get_total_tax(),
                 'vatPart' => floatval( $item->get_total_tax() ),
                 'amountVat' => floatval( $item->get_total() ),
             );
+
         }
 
         foreach( $order->get_items( 'fee' ) as $item_id => $item ) {
 
             $taxes = $tax->get_rates( $item->get_tax_class() );
             $rates = array_shift( $taxes );
-            $item_rate = round( array_shift( $rates ) );
+            $item_rate = array_shift( $rates );
 
             $data['lines'][] = array(
                 'lineType' => 'product',
@@ -241,22 +271,29 @@ class Infast_Woocommerce_Api {
                 'price' => floatval( $item->get_total() ),
                 'vat' => floatval( $item_rate ),
                 'quantity' => 1,
+                'isService' => false,
             );
         }
 
         foreach( $order->get_items( 'shipping' ) as $item_id => $item ) {
 
-            $taxes = $tax->get_rates( $item->get_tax_class() );
-            $rates = array_shift( $taxes );
-            $item_rate = round( array_shift( $rates ) );
+            $method_id = $item['method_id'];
+            $instance_id = $item['instance_id'];
+            $data_shipping = get_option( 'woocommerce_' . $method_id . '_' . $instance_id . '_settings' );
+            $infast_shipping_id = $data_shipping['infast_shipping_id'];
+            if ( empty( $infast_shipping_id ) ) {
+                $infast_shipping_id = NULL;
+                $infast_shipping_id = $this->create_product_shipping( $instance_id, $method_id, $item, $infast_shipping_id );
+            }
 
             $data['lines'][] = array(
                 'lineType' => 'product',
-                'name' => $item->get_method_title(),
-                'price' => floatval( $item->get_total() ),
-                'vat' => floatval( $item_rate ),
+                'productId' => $infast_shipping_id,
+                'price' => floatval( $item->get_total() ), // force use WP value, shipping method is not updated on INFast side
+                'vat' => floatval( $item_rate ),  // force use WP value, shipping method is not updated on INFast side
                 'quantity' => 1,
             );
+
         }
 
         $data['discount']['type'] = 'CASH';
@@ -267,34 +304,41 @@ class Infast_Woocommerce_Api {
     }
 
     /**
-     * Create a customer on INFast
+     * Create/Update a product on INFast
      *
      * @since    1.0.0
-     * @param      int    $order_id       WooCommerce order ID used to create the customer on INFast
+     * @param      int    $product_id       WooCommerce product ID
+     * @param      int    $infast_product_id       INFast product ID you want to update, use NULL to create
      * @param      bool    $force       Force OAuth2 token regeneration
      */
-    private function create_customer( $order_id, $force = false ) {
-
-        $order = wc_get_order( $order_id );
+    public function create_product( $product_id, $infast_product_id = NULL, $force = false ) {
 
         $access_token = $this->get_oauth2_token( $force );
         if ( $access_token == false ) {
-            $order->add_order_note( 'INFast API: Document not created, check INFast settings if your Client ID and Client secret are valid' );
+            error_log( 'INFast API: Product not created/updated, invalid client ID and/or client secret' );
             return false;
         }
 
-        $data = $this->create_customer_prepare_data( $order_id );
+        if ( $infast_product_id == NULL ) {
+            $curlopt_url = INFAST_API_URL . 'api/v1/products';
+            $curlopt_customrequest = 'POST';
+        } else {
+            $curlopt_url = INFAST_API_URL . 'api/v1/products/' . $infast_product_id;
+            $curlopt_customrequest = 'PATCH';
+        }
+
+        $data = $this->create_product_prepare_data( $product_id );
 
         $curl = curl_init();
 
         curl_setopt_array( $curl, array(
-            CURLOPT_URL => INFAST_API_URL . 'api/v1/customers',
+            CURLOPT_URL => $curlopt_url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
             CURLOPT_POSTFIELDS => json_encode( $data ),
             CURLOPT_HTTPHEADER => array(
                 'authorization: Bearer ' . $access_token,
@@ -308,16 +352,230 @@ class Infast_Woocommerce_Api {
         curl_close( $curl );
 
         if ( $code == 401) { // access_token is expired
-            return $this->create_customer( $order_id, true );
+            return $this->create_product( $product_id, true );
         }
 
         if ($err) {
-            $order->add_order_note( 'INFast API: Customer created error:' . $err );
+            error_log( 'INFast API: Shipping created error:' . $err );
+            return false;
+        } else {
+            $response = json_decode( $response, true );
+            $infast_product_id = $response['_id'];
+            update_post_meta( $product_id, '_infast_product_id', $infast_product_id );
+            return $infast_product_id;
+        }
+
+    }
+
+    /**
+     * Fill an array with all data needed to call the API to create/update a product
+     * Full parameters list: https://infast.docs.stoplight.io/api-reference/products/createproduct
+     *
+     * @since    1.0.0
+     * @param      int    $product       WooCommerce product ID
+     */
+    private function create_product_prepare_data( $product_id ) {
+
+        $product = wc_get_product( $product_id );
+
+        $tax = new WC_Tax();
+        $taxes = $tax->get_rates( $product->get_tax_class() );
+        $rates = array_shift( $taxes );
+        $product_rate = array_shift( $rates );
+
+        $data = array();
+
+        $data['name'] = $product->get_name();
+        $data['price'] = floatval( $product->get_price() );
+        $data['vat'] = $product_rate;
+        $data['reference'] = $product->get_sku() ? $product->get_sku() : strval( $product->get_id() );
+        $data['description'] = $product->get_short_description();
+        $data['isService'] = false;
+
+        return $data;
+
+    }
+
+    /**
+     * Create/Update a product (shipping) on INFast
+     *
+     * @since    1.0.0
+     * @param      int    $shipping_id       WooCommerce shipping ID
+     * @param      int    $method_id       WooCommerce shipping method ID
+     * @param      WC_Order_Item    $item       Order item used to compute VAT
+     * @param      int    $infast_product_id       INFast product ID you want to update, use NULL to create
+     * @param      bool    $force       Force OAuth2 token regeneration
+     */
+    public function create_product_shipping( $shipping_id, $method_id, $item, $infast_product_id = NULL, $force = false ) {
+
+        $access_token = $this->get_oauth2_token( $force );
+        if ( $access_token == false ) {
+            error_log( 'INFast API: Shipping not created/updated, invalid client ID and/or client secret' );
+            return false;
+        }
+
+        if ( $infast_product_id == NULL ) {
+            $curlopt_url = INFAST_API_URL . 'api/v1/products';
+            $curlopt_customrequest = 'POST';
+        } else {
+            $curlopt_url = INFAST_API_URL . 'api/v1/products/' . $infast_product_id;
+            $curlopt_customrequest = 'PATCH';
+        }
+
+        $data = $this->create_product_prepare_data_shipping( $shipping_id, $item );
+
+        $curl = curl_init();
+
+        curl_setopt_array( $curl, array(
+            CURLOPT_URL => $curlopt_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
+            CURLOPT_POSTFIELDS => json_encode( $data ),
+            CURLOPT_HTTPHEADER => array(
+                'authorization: Bearer ' . $access_token,
+                'content-type: application/json'
+            ),
+        ) );
+
+        $response = curl_exec( $curl );
+        $err = curl_error( $curl );
+        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        curl_close( $curl );
+
+        if ( $code == 401) { // access_token is expired
+            return $this->create_product_shipping( $shipping_id, $method_id, $item, $infast_product_id, true );
+        }
+
+        if ($err) {
+            error_log( 'INFast API: Product created error:' . $err );
+            return false;
+        } else {
+            $response = json_decode( $response, true );
+            $infast_shipping_id = $response['_id'];
+
+            $data_shipping = get_option( 'woocommerce_' . $method_id . '_' . $shipping_id . '_settings' );
+            $data_shipping['infast_shipping_id'] = $infast_shipping_id;
+            update_option( 'woocommerce_' . $method_id . '_' . $shipping_id . '_settings', $data_shipping );
+            return $infast_shipping_id;
+        }
+
+    }
+
+    /**
+     * Fill an array with all data needed to call the API to create/update a product (shipping)
+     * Full parameters list: https://infast.docs.stoplight.io/api-reference/products/createproduct
+     *
+     * @since    1.0.0
+     * @param      int    $product       WooCommerce product ID
+     */
+    private function create_product_prepare_data_shipping( $shipping_id, $item ) {
+
+        $data = array();
+
+        $zones = WC_Shipping_Zones::get_zones();
+        $shipping_methods = array_map(function($zone) {
+            return $zone['shipping_methods'];
+        }, $zones);
+        $basic_zone_methods = (new WC_Shipping_Zone(0))->get_shipping_methods();
+        array_push( $shipping_methods, $basic_zone_methods );
+
+        foreach ( $shipping_methods as $shipping_method ) {
+            foreach ( $shipping_method as $shipping_idx => $shipping ) {
+
+                if ( $shipping_idx == $shipping_id ) {
+
+                    $tax = new WC_Tax();
+                    $taxes = $tax->get_rates( $item->get_tax_class() );
+                    $rates = array_shift( $taxes );
+                    $item_rate = array_shift( $rates );
+
+                    $data['name'] = $shipping->title;
+                    $data['price'] = floatval( $shipping->cost );
+                    $data['vat'] = $item_rate;
+                    $data['isService'] = true;
+                    return $data;
+
+                }
+            }
+        }
+
+        return $data;
+
+    }
+
+    /**
+     * Create a customer on INFast
+     *
+     * @since    1.0.0
+     * @param      int    $user_id      User ID used to create the customer on INFast
+     * @param      int    $order_id       WooCommerce order ID used to create the customer on INFast
+     * @param      int    $infast_customer_id       INFast customer ID
+     * @param      bool    $force       Force OAuth2 token regeneration
+     */
+    public function create_customer( $user_id, $order_id = NULL, $infast_customer_id = NULL, $force = false ) {
+
+        if ( $order_id != NULL )
+            $order = wc_get_order( $order_id );
+
+        $access_token = $this->get_oauth2_token( $force );
+        if ( $access_token == false ) {
+            if ( $order )
+                $order->add_order_note( 'INFast API: Document not created, check INFast settings if your Client ID and Client secret are valid' );
+            error_log( 'INFast API: Document not created, invalid client ID and/or client secret' );
+            return false;
+        }
+
+        $data = $this->create_customer_prepare_data( $user_id );
+
+        if ( $infast_customer_id == NULL ) {
+            $curlopt_url = INFAST_API_URL . 'api/v1/customers';
+            $curlopt_customrequest = 'POST';
+        } else {
+            $curlopt_url = INFAST_API_URL . 'api/v1/customers/' . $infast_customer_id;
+            $curlopt_customrequest = 'PATCH';
+        }
+
+        $curl = curl_init();
+
+        curl_setopt_array( $curl, array(
+            CURLOPT_URL => $curlopt_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
+            CURLOPT_POSTFIELDS => json_encode( $data ),
+            CURLOPT_HTTPHEADER => array(
+                'authorization: Bearer ' . $access_token,
+                'content-type: application/json'
+            ),
+        ) );
+
+        $response = curl_exec( $curl );
+        $err = curl_error( $curl );
+        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        curl_close( $curl );
+
+        if ( $code == 401) { // access_token is expired
+            return $this->create_customer( $user_id, $order_id, $infast_customer_id, true );
+        }
+
+        if ($err) {
+            if ( $order )
+                $order->add_order_note( 'INFast API: Customer created error:' . $err );
+            error_log( 'INFast API: Customer created error:' . $err );
             return false;
         } else {
             $response = json_decode( $response, true );
             $customer_id = $response['_id'];
-            $order->add_order_note( 'INFast API: Customer created ' . $customer_id );
+            if ( $order )
+                $order->add_order_note( 'INFast API: Customer created ' . $customer_id );
+            update_user_meta( $user_id, '_infast_customer_id', $customer_id );
             return $customer_id;
         }
 
@@ -328,30 +586,30 @@ class Infast_Woocommerce_Api {
      * Full parameters list: https://infast.docs.stoplight.io/api-reference/documents/createcustomer
      *
      * @since    1.0.0
-     * @param      int    $order_id       WooCommerce order ID used to create the invoice on INFast
+     * @param      int    $user_id       User ID
      */
-    private function create_customer_prepare_data( $order_id ) {
+    private function create_customer_prepare_data( $user_id ) {
 
-        $order = wc_get_order( $order_id );
+        $user = wc_get_order( $order_id );
 
         $data = array();
 
-        $data['name'] = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
+        $data['name'] = get_user_meta( $user_id, 'billing_first_name', true ) . ' ' . get_user_meta( $user_id, 'billing_last_name', true );
         $data['address'] = array();
-        $data['address']['street'] = $order->get_billing_address_1();
-        $data['address']['postalCode'] = $order->get_billing_postcode();
-        $data['address']['city'] = $order->get_billing_city();
-        $data['address']['country'] = WC()->countries->countries[ $order->get_billing_country() ];
-        $data['email'] = ($a = get_userdata( $order->get_user_id() ) ) ? $a->user_email : '';
-        $data['phone'] = $order->get_billing_phone();
+        $data['address']['street'] = get_user_meta( $user_id, 'billing_address_1', true );
+        $data['address']['postalCode'] = get_user_meta( $user_id, 'billing_postcode', true );
+        $data['address']['city'] = get_user_meta( $user_id, 'billing_city', true );
+        $data['address']['country'] = WC()->countries->countries[ get_user_meta( $user_id, 'billing_country', true ) ];
+        $data['email'] = get_user_meta( $user_id, 'billing_email', true );
+        $data['phone'] = get_user_meta( $user_id, 'billing_phone', true );
         $data['delivery'] = array();
         $data['delivery']['address'] = array();
-        $data['delivery']['address']['street'] = $order->get_shipping_address_1();
-        $data['delivery']['address']['postalCode'] = $order->get_shipping_postcode();
-        $data['delivery']['address']['city'] = $order->get_shipping_city();
-        $data['delivery']['address']['country'] = WC()->countries->countries[ $order->get_shipping_country() ];
-        $data['delivery']['name'] = $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name();
-        $data['outsideEU'] = $this->is_outside_EU( $order->get_billing_country() );
+        $data['delivery']['address']['street'] = get_user_meta( $user_id, 'shipping_address_1', true );
+        $data['delivery']['address']['postalCode'] = get_user_meta( $user_id, 'shipping_postcode', true );
+        $data['delivery']['address']['city'] = get_user_meta( $user_id, 'shipping_city', true );
+        $data['delivery']['address']['country'] = WC()->countries->countries[ get_user_meta( $user_id, 'shipping_country', true ) ];
+        $data['delivery']['name'] = get_user_meta( $user_id, 'shipping_first_name', true ) . ' ' . get_user_meta( $user_id, 'shipping_last_name', true );
+        $data['outsideEU'] = $this->is_outside_EU( get_user_meta( $user_id, 'billing_country', true ) );
 
         return $data;
 
@@ -372,6 +630,7 @@ class Infast_Woocommerce_Api {
         $access_token = $this->get_oauth2_token( $force );
         if ( $access_token == false ) {
             $order->add_order_note( 'INFast API: Document payment not created, check INFast settings if your Client ID and Client secret are valid' );
+            error_log( 'INFast API: Document payment not created, invalid client ID and/or client secret' );
             return false;
         }
 
@@ -404,6 +663,7 @@ class Infast_Woocommerce_Api {
 
         if ($err) {
             $order->add_order_note( 'INFast API: Add payment error:' . $err );
+            error_log( 'INFast API: Add payment error:' . $err );
             return false;
         } else {
             $response = json_decode( $response, true );
@@ -449,9 +709,14 @@ class Infast_Woocommerce_Api {
         $access_token = $this->get_oauth2_token( $force );
         if ( $access_token == false ) {
             $order->add_order_note( 'INFast API: Document not sent by email, check INFast settings if your Client ID and Client secret are valid' );
+            error_log( 'INFast API: Document not sent by email, invalid client ID and/or client secret' );
             return false;
         }
 
+        $data = $this->add_send_document_email_prepare_data( $order_id );
+        if ( count ( $data == 0 ) )
+            $data = new stdClass();
+        
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
@@ -462,6 +727,7 @@ class Infast_Woocommerce_Api {
             CURLOPT_TIMEOUT => 30,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode( $data ),
             CURLOPT_HTTPHEADER => array(
                 'authorization: Bearer ' . $access_token,
                 'content-type: application/json'
@@ -479,6 +745,7 @@ class Infast_Woocommerce_Api {
 
         if ($err) {
             $order->add_order_note( 'INFast API: Send document by email error:' . $err );
+            error_log( 'INFast API: Document sent by email error:' . $err );
             return false;
         } else {
             $response = json_decode( $response, true );
@@ -486,6 +753,24 @@ class Infast_Woocommerce_Api {
             $order->add_order_note( 'INFast API: Document sent by email ' . $email_id );
             return $email_id;
         }
+
+    }
+
+    /**
+     * Fill an array with all data needed to call the API to send document by email
+     * Full parameters list: https://infast.docs.stoplight.io/api-reference/documents/sendemail
+     *
+     * @since    1.0.0
+     */
+    private function add_send_document_email_prepare_data() {
+
+        $cc_setting = get_option( 'infast_woocommerce' )['cc_email'];
+
+        $data = array();
+        if ( ! empty( $cc_setting ) && $cc_setting != NULL )
+            $data['cc'] = $cc_setting;
+
+        return $data;
 
     }
 
@@ -506,7 +791,5 @@ class Infast_Woocommerce_Api {
         return ( ! in_array( $country_code , $eu_country_codes ) );
 
     }
-
-    
 
 }
