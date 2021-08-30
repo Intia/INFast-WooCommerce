@@ -236,11 +236,6 @@ class Infast_Woocommerce_Api {
         foreach ( $order->get_items() as $item_id => $item ) {
             
             $product = wc_get_product( $item->get_product_id() );
-
-            $taxes = $tax->get_rates( $product->get_tax_class() );
-            $rates = array_shift( $taxes );
-            $product_rate = array_shift( $rates );
-
             $infast_product_id = get_post_meta( $product->get_id(), '_infast_product_id', true );
 
             if ( ! $infast_product_id ) {
@@ -263,7 +258,10 @@ class Infast_Woocommerce_Api {
 
             $taxes = $tax->get_rates( $item->get_tax_class() );
             $rates = array_shift( $taxes );
-            $item_rate = array_shift( $rates );
+            if ( $rates == NULL)
+                $item_rate = 0.00;
+            else
+                $item_rate = array_shift( $rates );
 
             $data['lines'][] = array(
                 'lineType' => 'product',
@@ -381,7 +379,10 @@ class Infast_Woocommerce_Api {
         $tax = new WC_Tax();
         $taxes = $tax->get_rates( $product->get_tax_class() );
         $rates = array_shift( $taxes );
-        $product_rate = array_shift( $rates );
+        if ( $rates == NULL)
+            $product_rate = 0.00;
+        else
+            $product_rate = array_shift( $rates );
 
         $data = array();
 
@@ -491,7 +492,10 @@ class Infast_Woocommerce_Api {
                     $tax = new WC_Tax();
                     $taxes = $tax->get_rates( $item->get_tax_class() );
                     $rates = array_shift( $taxes );
-                    $item_rate = array_shift( $rates );
+                    if ( $rates == NULL)
+                        $item_rate = 0.00;
+                    else
+                        $item_rate = array_shift( $rates );
 
                     $data['name'] = $shipping->title;
                     $data['price'] = floatval( $shipping->cost );
