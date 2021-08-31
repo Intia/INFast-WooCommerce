@@ -168,7 +168,7 @@ class Infast_Woocommerce {
 		$this->loader->add_action( 'woocommerce_checkout_order_processed', $plugin_admin, 'generate_invoice', 10, 1 );
 		$this->loader->add_action( 'profile_update', $plugin_admin, 'update_user', 10, 2 );
 		$this->loader->add_action( 'woocommerce_update_customer', $plugin_admin, 'update_user', 10, 3 );
-		$this->loader->add_action( 'save_post_product', $plugin_admin, 'update_product', 10, 3 );
+		$this->loader->add_action( 'woocommerce_update_product', $plugin_admin, 'update_product', 10, 1 );
 
 		$plugin_admin_settings = new Infast_Woocommerce_Admin_Settings( $plugin_admin );
 		$this->loader->add_action( 'admin_menu', $plugin_admin_settings, 'register_admin_page' );

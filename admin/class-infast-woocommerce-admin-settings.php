@@ -124,6 +124,8 @@ class Infast_Woocommerce_Admin_Settings {
 
 	    $options = get_option( 'infast_woocommerce' );
 	    $value = $options['client_secret'];
+	    if ( $value )
+	    	$value = '*******************************';
 	    ?>
 	    <input type='text' name='infast_woocommerce[client_secret]' value='<?php echo $value; ?>'>
 	    <?php
@@ -178,7 +180,7 @@ class Infast_Woocommerce_Admin_Settings {
 		    if( isset( $input[$idx] ) ) {
 
 		    	if ( $idx == 'client_secret' ) {
-		    		if ( $input[$idx] == get_option( 'infast_woocommerce' )['client_secret'] ) {
+		    		if ( strpos( $input[$idx], '*' ) !== false || $input[$idx] == get_option( 'infast_woocommerce' )['client_secret'] ) {
 			    		$output[$idx] = get_option( 'infast_woocommerce' )['client_secret'];
 			    	} else {
 			    		$output[$idx] = $this->encrypt_key( $value );

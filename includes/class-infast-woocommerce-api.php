@@ -243,6 +243,10 @@ class Infast_Woocommerce_Api {
                 $infast_product_id = $this->create_product( $product->get_id(), $infast_product_id );
             }
 
+            $taxes = $tax->get_rates( $product->get_tax_class() );
+            $rates = array_shift( $taxes );
+            $item_rate = round( array_shift( $rates ) );
+
             $data['lines'][] = array(
                 'lineType' => 'product',
                 'productId' => $infast_product_id,
@@ -250,6 +254,8 @@ class Infast_Woocommerce_Api {
                 'amount' => $item->get_total() - $item->get_total_tax(),
                 'vatPart' => floatval( $item->get_total_tax() ),
                 'amountVat' => floatval( $item->get_total() ),
+                'vat' => $item_rate,
+                'description' => $product->get_short_description(),
             );
 
         }
@@ -594,8 +600,6 @@ class Infast_Woocommerce_Api {
      */
     private function create_customer_prepare_data( $user_id ) {
 
-        $user = wc_get_order( $order_id );
-
         $data = array();
 
         $data['name'] = get_user_meta( $user_id, 'billing_first_name', true ) . ' ' . get_user_meta( $user_id, 'billing_last_name', true );
@@ -607,12 +611,24 @@ class Infast_Woocommerce_Api {
         $data['email'] = get_user_meta( $user_id, 'billing_email', true );
         $data['phone'] = get_user_meta( $user_id, 'billing_phone', true );
         $data['delivery'] = array();
+
+        $shipping_first_name = get_user_meta( $user_id, 'shipping_first_name', true );
+        $shipping_last_name = get_user_meta( $user_id, 'shipping_first_name', true );
+        if ( $shipping_first_name && $shipping_last_name )
+            $data['delivery']['name'] = get_user_meta( $user_id, 'shipping_first_name', true ) . ' ' . get_user_meta( $user_id, 'shipping_last_name', true );
+
+        $shipping_street = get_user_meta( $user_id, 'shipping_address_1', true );
+        $shipping_country = get_user_meta( $user_id, 'shipping_country', true );
         $data['delivery']['address'] = array();
-        $data['delivery']['address']['street'] = get_user_meta( $user_id, 'shipping_address_1', true );
+        $data['delivery']['address']['street'] = $shipping_street;
         $data['delivery']['address']['postalCode'] = get_user_meta( $user_id, 'shipping_postcode', true );
         $data['delivery']['address']['city'] = get_user_meta( $user_id, 'shipping_city', true );
-        $data['delivery']['address']['country'] = WC()->countries->countries[ get_user_meta( $user_id, 'shipping_country', true ) ];
-        $data['delivery']['name'] = get_user_meta( $user_id, 'shipping_first_name', true ) . ' ' . get_user_meta( $user_id, 'shipping_last_name', true );
+        $data['delivery']['address']['country'] = WC()->countries->countries[ $shipping_country ];
+        if ( $shipping_street && $shipping_country ) {
+            $data['useDelivery'] = true;
+            $data['sendToDelivery'] = true;
+        }
+
         $data['outsideEU'] = $this->is_outside_EU( get_user_meta( $user_id, 'billing_country', true ) );
 
         return $data;
@@ -718,7 +734,7 @@ class Infast_Woocommerce_Api {
         }
 
         $data = $this->add_send_document_email_prepare_data( $order_id );
-        if ( count ( $data == 0 ) )
+        if ( count ( $data ) == 0 )
             $data = new stdClass();
         
         $curl = curl_init();

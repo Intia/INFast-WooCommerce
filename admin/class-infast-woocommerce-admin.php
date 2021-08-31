@@ -154,18 +154,25 @@ class Infast_Woocommerce_Admin {
 	 * Update the product on INFast
 	 *
 	 * @since    1.0.0
-	 * @param      integer    $post_id       WooCommerce Product ID to update
-	 * @param      WP_Post    $post       WordPress Post object to update
-	 * @param      bool    $update       Update or create
+	 * @param      integer    $product_id       WooCommerce Product ID updated
 	 */
-	public function update_product( $post_id, $post, $update ) {
+	public function update_product( $product_id ) {
 
-		$product = wc_get_product( $post_id );
-		$infast_product_id = get_post_meta( $post_id, '_infast_product_id', true );
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+		    return;
+
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX )
+			return;
+
+		// if ( ! $update )
+		// 	return;
+
+		$product = wc_get_product( $product_id );
+		$infast_product_id = get_post_meta( $product_id, '_infast_product_id', true );
 		if ( ! $infast_product_id )
 			$infast_product_id = NULL;
 		$infast_api = Infast_Woocommerce_Api::getInstance();
-		$infast_api->create_product( $post_id, $infast_product_id );
+		$infast_api->create_product( $product_id, $infast_product_id );
 
 
 	}
