@@ -5,7 +5,7 @@
  *
  * This file is used to markup the public-facing aspects of the plugin.
  *
- * @link       https://www.vangus-agency.com
+ * @link       https://intia.fr
  * @since      1.0.0
  *
  * @package    Infast_Woocommerce

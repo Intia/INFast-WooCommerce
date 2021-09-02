@@ -4,7 +4,7 @@
  * The file that defines the class interacting with INFast API
  *
  *
- * @link       https://www.vangus-agency.com
+ * @link       https://intia.fr
  * @since      1.0.0
  *
  * @package    Infast_Woocommerce
@@ -19,7 +19,7 @@
  * @since      1.0.0
  * @package    Infast_Woocommerce
  * @subpackage Infast_Woocommerce/includes
- * @author     Vangus <hello@vangus-agency.com>
+ * @author     INTIA <dev@intia.fr>
  */
 class Infast_Woocommerce_Api {
 

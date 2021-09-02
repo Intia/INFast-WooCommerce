@@ -3,7 +3,7 @@
 /**
  * Admin class used to build our plugin settings page
  *
- * @link       https://www.vangus-agency.com
+ * @link       https://intia.fr
  * @since      1.0.0
  *
  * @package    Infast_Woocommerce
@@ -15,7 +15,7 @@
  *
  * @package    Infast_Woocommerce
  * @subpackage Infast_Woocommerce/admin
- * @author     Vangus <hello@vangus-agency.com>
+ * @author     INTIA <dev@intia.fr>
  */
 class Infast_Woocommerce_Admin_Settings {
 

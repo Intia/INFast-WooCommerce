@@ -8,7 +8,7 @@
  * registers the activation and deactivation functions, and defines a function
  * that starts the plugin.
  *
- * @link              https://www.vangus-agency.com
+ * @link              https://intia.fr
  * @since             1.0.0
  * @package           Infast_Woocommerce
  *
@@ -17,8 +17,8 @@
  * Plugin URI:        https://intia.fr
  * Description:       Logiciel de facturation pour les entrepreneurs et petites entreprises
  * Version:           1.0.0
- * Author:            Vangus
- * Author URI:        https://www.vangus-agency.com
+ * Author:            INTIA
+ * Author URI:        https://intia.fr
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       infast-woocommerce

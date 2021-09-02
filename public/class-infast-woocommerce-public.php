@@ -3,7 +3,7 @@
 /**
  * The public-facing functionality of the plugin.
  *
- * @link       https://www.vangus-agency.com
+ * @link       https://intia.fr
  * @since      1.0.0
  *
  * @package    Infast_Woocommerce
@@ -18,7 +18,7 @@
  *
  * @package    Infast_Woocommerce
  * @subpackage Infast_Woocommerce/public
- * @author     Vangus <hello@vangus-agency.com>
+ * @author     INTIA <dev@intia.fr>
  */
 class Infast_Woocommerce_Public {
 
