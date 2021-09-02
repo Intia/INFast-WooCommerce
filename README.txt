@@ -1,114 +1,80 @@
-=== Plugin Name ===
-Contributors: (this should be a list of wordpress.org userid's)
-Donate link: https://www.vangus-agency.com
-Tags: comments, spam
+=== INFast for WooCommerce ===
+Contributors: intia
+Tags: invoice, facture, infast, intia
 Requires at least: 3.0.1
 Tested up to: 3.4
 Stable tag: 4.3
-License: GPLv2 or later
+License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Here is a short description of the plugin.  This should be no more than 150 characters.  No markup here.
+Permet la création de factures INFast lors d\'une commande faite sous WooCommerce.
 
 == Description ==
+Ce plugin permet de connecter votre boutique WooCommerce avec INFast.
 
-This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
+INFast automatise vos devis, factures et relances clients.
+Interface simple et intuitive accessible sur tout support.
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-Markdown parsed.
+Ce plugin est gratuit mais nécessite un compte INFast.
+WooCommerce doit également être installé.
 
-A few notes about the sections above:
 
-*   "Contributors" is a comma separated list of wp.org/wp-plugins.org usernames
-*   "Tags" is a comma separated list of tags that apply to the plugin
-*   "Requires at least" is the lowest version that the plugin will work on
-*   "Tested up to" is the highest version that you've *successfully used to test the plugin*. Note that it might work on
-higher versions... this is just the highest one you've verified.
-*   Stable tag should indicate the Subversion "tag" of the latest stable version, or "trunk," if you use `/trunk/` for
-stable.
+Le plugin vous permet lors d\'une commande d\'un de vos clients de lui envoyer directement par mail une facture générée par INFast.
+Ceci vous permet de centraliser toutes vos factures (achats en ligne et achats physiques) dans le même outil.
 
-    Note that the `readme.txt` of the stable tag is the one that is considered the defining one for the plugin, so
-if the `/trunk/readme.txt` file says that the stable tag is `4.3`, then it is `/tags/4.3/readme.txt` that'll be used
-for displaying information about the plugin.  In this situation, the only thing considered from the trunk `readme.txt`
-is the stable tag pointer.  Thus, if you develop in trunk, you can update the trunk `readme.txt` to reflect changes in
-your in-development version, without having that information incorrectly disclosed about the current stable version
-that lacks those changes -- as long as the trunk's `readme.txt` points to the correct stable tag.
+Les articles et clients sont automatiquement créé et mis à jour dans INFast.
 
-    If no stable tag is provided, it is assumed that trunk is stable, but you should specify "trunk" if that's where
-you put the stable version, in order to eliminate any doubt.
+Voici la liste des fonctionnalités :
+- Création des clients dans INFast dès la création dans WooCommerce
+- Mise à jour des clients dans INFast dès la mise à jour dans WooCommerce
+- Création des articles dans INFast dès la création dans WooCommerce
+- Mise à jour des articles dans INFast dès la mise à jour dans WooCommerce
+- Création des articles dans INFast lors de la création des factures si l\'article n\'est pas déjà dans INFast
+- Synchronisation de tous les articles WooCommerce dans INFast
+- Possibilité d\'activer ou non l\'envoi de mail
+- Possibilité d\'ajouter un destinataire en copie des envoi de mail
+
 
 == Installation ==
+Depuis l\'administration de Wordpress : 
+- Rendez vous dans la rubrique \"plugins\"
+- Cliquez sur \"Add new\"
+- Recherchez \"INFast\"
+- Cliquez sur \"Install\"
+- Activez le plugin
 
-This section describes how to install the plugin and get it working.
+Une fois activé, un nouveau sous menu apparaît dans le menu WooCommerce.
+Pour lier WooCommerce à INFast, il est nécessaire de renseigner le ClientID et ClientSecret de votre compte INFast.
+Ces identifiants sont accessible dans INFast, menu principal (en haut à droite), puis \"Paramètres\", puis API.
 
-e.g.
+Il est possible d\'envoyer automatiquement les factures à vos clients si vous cochez la case \"Envoyer les factures automatiquement par email ?\"
+Vous pouvez également recevoir une copie des emails en renseignant une adresse email.
 
-1. Upload `infast-woocommerce.php` to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Place `<?php do_action('plugin_name_hook'); ?>` in your templates
+N\'oubliez pas de sauvegarder ces changements.
+
+
+Si vous avez déjà des produits de renseignés dans WooCommerce, il est possible de les créer dans INFast en cliquant sur \"Lancer la synchronisation\"
 
 == Frequently Asked Questions ==
+= Est-ce que ce plugin fonctionne sans WooCommerce ? =
+Non, ce plugin est dédié à la synchronisation des commandes WooCommerce dans INFast
 
-= A question that someone might have =
+= Est ce qu\'INFast est gratuit ? =
+INFast est gratuit pendant 30 jours.
+Il est ensuite nécessaire de prendre un abonnement sur l\'offre FURIOUS pour disposer des accès API qui permettra l’interconnexion avec WooCommerce.
 
-An answer to that question.
-
-= What about foo bar? =
-
-Answer to foo bar dilemma.
-
-== Screenshots ==
-
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
+= Les articles sont-ils mis à jours automatiquement ? =
+Oui.
+Dès qu\'un article est créé ou modifié dans WooCommerce, il sera créé ou modifié dans INFast.
+En revanche une mise à jours dans INFast n’entraîne pas de mise à jour dans WooCommerce
 
 == Changelog ==
-
-= 1.0 =
-* A change since the previous version.
-* Another change.
-
-= 0.5 =
-* List versions from most recent at top to oldest at bottom.
-
-== Upgrade Notice ==
-
-= 1.0 =
-Upgrade notices describe the reason a user should upgrade.  No more than 300 characters.
-
-= 0.5 =
-This version fixes a security related bug.  Upgrade immediately.
-
-== Arbitrary section ==
-
-You may provide arbitrary sections, in the same format as the ones above.  This may be of use for extremely complicated
-plugins where more information needs to be conveyed that doesn't fit into the categories of "description" or
-"installation."  Arbitrary sections will be shown below the built-in sections outlined above.
-
-== A brief Markdown Example ==
-
-Ordered list:
-
-1. Some feature
-1. Another feature
-1. Something else about the plugin
-
-Unordered list:
-
-* something
-* something else
-* third thing
-
-Here's a link to [WordPress](http://wordpress.org/ "Your favorite software") and one to [Markdown's Syntax Documentation][markdown syntax].
-Titles are optional, naturally.
-
-[markdown syntax]: http://daringfireball.net/projects/markdown/syntax
-            "Markdown is what the parser uses to process much of the readme file"
-
-Markdown uses email style notation for blockquotes and I've been told:
-> Asterisks for *emphasis*. Double it up  for **strong**.
-
-`<?php code(); // goes in backticks ?>`
+= Version 1.0.0 =
+- Création des clients dans INFast dès la création dans WooCommerce
+- Mise à jour des clients dans INFast dès la mise à jour dans WooCommerce
+- Création des articles dans INFast dès la création dans WooCommerce
+- Mise à jour des articles dans INFast dès la mise à jour dans WooCommerce
+- Création des articles dans INFast lors de la création des factures si l\'article n\'est pas déjà dans INFast
+- Synchronisation de tous les articles WooCommerce dans INFast
+- Possibilité d\'activer ou non l\'envoi de mail
+- Possibilité d\'ajouter un destinataire en copie des envoi de mail
