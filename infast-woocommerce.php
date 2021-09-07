@@ -13,16 +13,15 @@
  * @package           Infast_Woocommerce
  *
  * @wordpress-plugin
- * Plugin Name:       INFast WooCommerce
- * Plugin URI:        https://intia.fr
- * Description:       Logiciel de facturation pour les entrepreneurs et petites entreprises
+ * Plugin Name:       INFast
+ * Plugin URI:        https://intia.fr/plugin-wordpress
+ * Description:       Permet la création de factures INFast lors d\'une commande faite sous WooCommerce.
  * Version:           1.0.0
  * Author:            INTIA
  * Author URI:        https://intia.fr
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       infast-woocommerce
- * Domain Path:       /languages
  */
 
 // If this file is called directly, abort.
