@@ -3,7 +3,7 @@ Contributors: intia
 Tags: invoice, facture, infast, intia
 Requires at least: 3.0.1
 Tested up to: 5.8
-Stable tag: 5.8
+Stable tag: 1.0.0
 License: GPL-2.0+
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,7 +45,7 @@ Depuis l\'administration de Wordpress :
 
 Une fois activé, un nouveau sous menu apparaît dans le menu WooCommerce.  
 Pour lier WooCommerce à INFast, il est nécessaire de renseigner le ClientID et ClientSecret de votre compte INFast.  
-Ces identifiants sont accessible dans INFast, menu principal (en haut à droite), puis \"Paramètres\", puis API.  
+Ces identifiants sont accessibles dans INFast, menu principal (en haut à droite), puis \"Paramètres\", puis API.  
   
 Il est possible d\'envoyer automatiquement les factures à vos clients si vous cochez la case \"Envoyer les factures automatiquement par email ?\"  
 Vous pouvez également recevoir une copie des emails en renseignant une adresse email.  
