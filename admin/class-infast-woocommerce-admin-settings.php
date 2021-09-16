@@ -110,7 +110,7 @@ class Infast_Woocommerce_Admin_Settings {
 
 	    $options = get_option( 'infast_woocommerce' );
 	    ?>
-	    <input type='text' name='infast_woocommerce[client_id]' value='<?php echo $options['client_id']; ?>'>
+	    <input type='text' name='infast_woocommerce[client_id]' value='<?php echo esc_attr( $options['client_id'] ); ?>'>
 	    <?php
 
 	}
@@ -127,7 +127,7 @@ class Infast_Woocommerce_Admin_Settings {
 	    if ( $value )
 	    	$value = '*******************************';
 	    ?>
-	    <input type='text' name='infast_woocommerce[client_secret]' value='<?php echo $value; ?>'>
+	    <input type='text' name='infast_woocommerce[client_secret]' value='<?php echo esc_attr( $value ); ?>'>
 	    <?php
 
 	}
@@ -155,7 +155,7 @@ class Infast_Woocommerce_Admin_Settings {
 
 	    $options = get_option( 'infast_woocommerce' );
 	    ?>
-	    <input type="email" name="infast_woocommerce[cc_email]" value="<?php if ( isset ( $options['cc_email'] ) ) echo $options['cc_email']; ?>" />
+	    <input type="email" name="infast_woocommerce[cc_email]" value="<?php if ( isset ( $options['cc_email'] ) ) echo esc_attr( $options['cc_email'] ); ?>" />
 		<?php
 
 	}

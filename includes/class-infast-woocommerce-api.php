@@ -72,49 +72,97 @@ class Infast_Woocommerce_Api {
 
         $url = INFAST_API_URL . 'oauth2/token';
 
-        $curl = curl_init( $url );
-        curl_setopt( $curl, CURLOPT_URL, $url );
-        curl_setopt( $curl, CURLOPT_POST, true );
-        curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+        //$curl = curl_init( $url );
+        //curl_setopt( $curl, CURLOPT_URL, $url );
+        //curl_setopt( $curl, CURLOPT_POST, true );
+        //curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 
-        $headers = array(
-           'Content-Type: application/x-www-form-urlencoded',
-        );
-        curl_setopt( $curl, CURLOPT_HTTPHEADER, $headers );
+        // $headers = array(
+        //    'Content-Type: application/x-www-form-urlencoded',
+        // );
+        // curl_setopt( $curl, CURLOPT_HTTPHEADER, $headers );
+
+        // $options = get_option( 'infast_woocommerce' );
+        // $client_secret = $this->decrypt_key( $options['client_secret'] );
+        // $data = 'client_id=' . $options['client_id'];
+        // $data .= '&client_secret=' . $client_secret;
+        // $data .= '&grant_type=client_credentials&scope=write';
+
+        //curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
+
+        // $resp = curl_exec( $curl );
+        // if ( curl_errno( $curl ) ) {
+
+        //     error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . curl_error( $curl ) );
+        //     update_option( 'infast_access_token', false );
+        //     curl_close( $curl );
+        //     return false;
+
+        // } else {
+
+        //     $resp = json_decode( $resp, true );
+        //     if ( is_array( $resp ) && array_key_exists( 'access_token', $resp ) ){
+        //         $access_token = $resp['access_token'];
+        //         update_option( 'infast_access_token', $access_token );
+        //         curl_close( $curl );
+        //         return $access_token;                
+        //     } else {
+        //         error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . $resp );
+        //         update_option( 'infast_access_token', false );
+        //         curl_close( $curl );
+        //         return false;
+        //     }
+
+        // }
 
         $options = get_option( 'infast_woocommerce' );
         $client_secret = $this->decrypt_key( $options['client_secret'] );
-        $data = 'client_id=' . $options['client_id'];
-        $data .= '&client_secret=' . $client_secret;
-        $data .= '&grant_type=client_credentials&scope=write';
+        $body = array(
+            'client_id'     => $options['client_id'],
+            'client_secret' => $client_secret,
+            'grant_type'    => 'client_credentials',
+            'scope'         => 'write',
+        );
 
-        curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
+        $headers = array(
+            'Content-Type'  =>  'application/x-www-form-urlencoded',
+        );
 
-        $resp = curl_exec( $curl );
-        if ( curl_errno( $curl ) ) {
+        $args = array(
+            'body'        => $body,
+            'headers'     => $headers,
+        );
 
-            error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . curl_error( $curl ) );
+        $resp = wp_remote_post( $url, $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( is_wp_error( $resp ) ) {
+
+            $error_message = $response->get_error_message();
+            error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . $error_message );
             update_option( 'infast_access_token', false );
-            curl_close( $curl );
             return false;
 
-        } else {
+        } else if ( $http_code == 200) {
 
-            $resp = json_decode( $resp, true );
-            if ( is_array( $resp ) && array_key_exists( 'access_token', $resp ) ){
-                $access_token = $resp['access_token'];
+            $resp_body = json_decode( $resp['body'], true );
+            if ( is_array( $resp_body ) && array_key_exists( 'access_token', $resp_body ) ){
+                $access_token = $resp_body['access_token'];
                 update_option( 'infast_access_token', $access_token );
-                curl_close( $curl );
                 return $access_token;                
             } else {
-                error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . $resp );
+                error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . print_r( $resp['body'] ) );
                 update_option( 'infast_access_token', false );
-                curl_close( $curl );
                 return false;
             }
 
+        } else {
+            error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . print_r( $resp['body'] ) );
+            update_option( 'infast_access_token', false );
+            return false;  
         }
 
+        
     }
 
     /**
@@ -168,42 +216,74 @@ class Infast_Woocommerce_Api {
 
         $data = $this->create_document_prepare_data( $order_id, $customer_id );
 
-        $curl = curl_init();
+        // $curl = curl_init();
 
-        curl_setopt_array( $curl, array(
-            CURLOPT_URL => INFAST_API_URL . 'api/v1/documents',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode( $data ),
-            CURLOPT_HTTPHEADER => array(
-                'authorization: Bearer ' . $access_token,
-                'content-type: application/json'
-            ),
-        ) );
+        // curl_setopt_array( $curl, array(
+        //     CURLOPT_URL => INFAST_API_URL . 'api/v1/documents',
+        //     CURLOPT_RETURNTRANSFER => true,
+        //     CURLOPT_ENCODING => "",
+        //     CURLOPT_MAXREDIRS => 10,
+        //     CURLOPT_TIMEOUT => 30,
+        //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        //     CURLOPT_CUSTOMREQUEST => 'POST',
+        //     CURLOPT_POSTFIELDS => json_encode( $data ),
+        //     CURLOPT_HTTPHEADER => array(
+        //         'authorization: Bearer ' . $access_token,
+        //         'content-type: application/json'
+        //     ),
+        // ) );
 
-        $response = curl_exec( $curl );
-        $err = curl_error( $curl );
-        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
-        curl_close( $curl );
+        // $response = curl_exec( $curl );
+        // $err = curl_error( $curl );
+        // $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        // curl_close( $curl );
 
-        if ( $code == 401) { // access_token is expired
-            return $this->create_document( $order_id, $customer_id, true );
+        // if ( $code == 401) { // access_token is expired
+        //     return $this->create_document( $order_id, $customer_id, true );
             
+        // }
+
+        // if ( $err ) {
+        //     $order->add_order_note( 'INFast API: Document created error:' . $err );
+        //     error_log( 'INFast API: Document created error:' . $err );
+        //     return false;
+        // } else {
+        //     $response = json_decode( $response, true );
+        //     $document_id = $response['_id'];
+        //     $order->add_order_note( 'INFast API: Document created ' . $document_id );
+        //     return $document_id;
+        // }
+
+        $headers = array(
+            'authorization' =>  'Bearer ' . $access_token,
+            'content-type'  =>  'application/json',
+        );
+
+        $args = array(
+            'body'        => json_encode( $data ),
+            'headers'     => $headers,
+            'timeout'     => '30',
+            'redirection' => '10',
+            'httpversion' => '1.1',
+        );
+
+        $resp = wp_remote_post( INFAST_API_URL . 'api/v1/documents', $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( $htttp_code == 401 ) { // access token is expired
+            return $this->create_document( $order_id, $customer_id, true );
         }
 
-        if ( $err ) {
-            $order->add_order_note( 'INFast API: Document created error:' . $err );
-            error_log( 'INFast API: Document created error:' . $err );
+        if ( is_wp_error( $resp ) ) {
+            $error_message = $resp->get_error_message();
+            $order->add_order_note( 'INFast API: Document created error:' . $error_message );
+            error_log( 'INFast API: Document created error:' . $error_message );
             return false;
         } else {
-            $response = json_decode( $response, true );
+            $response = json_decode( $resp['body'], true );
             $document_id = $response['_id'];
             $order->add_order_note( 'INFast API: Document created ' . $document_id );
-            return $document_id;
+            return $document_id;            
         }
 
     }
@@ -324,49 +404,81 @@ class Infast_Woocommerce_Api {
         }
 
         if ( $infast_product_id == NULL ) {
-            $curlopt_url = INFAST_API_URL . 'api/v1/products';
-            $curlopt_customrequest = 'POST';
+            $request_url = INFAST_API_URL . 'api/v1/products';
+            $request_type = 'POST';
         } else {
-            $curlopt_url = INFAST_API_URL . 'api/v1/products/' . $infast_product_id;
-            $curlopt_customrequest = 'PATCH';
+            $request_url = INFAST_API_URL . 'api/v1/products/' . $infast_product_id;
+            $request_type = 'PATCH';
         }
 
         $data = $this->create_product_prepare_data( $product_id );
 
-        $curl = curl_init();
+        // $curl = curl_init();
 
-        curl_setopt_array( $curl, array(
-            CURLOPT_URL => $curlopt_url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
-            CURLOPT_POSTFIELDS => json_encode( $data ),
-            CURLOPT_HTTPHEADER => array(
-                'authorization: Bearer ' . $access_token,
-                'content-type: application/json'
-            ),
-        ) );
+        // curl_setopt_array( $curl, array(
+        //     CURLOPT_URL => $curlopt_url,
+        //     CURLOPT_RETURNTRANSFER => true,
+        //     CURLOPT_ENCODING => '',
+        //     CURLOPT_MAXREDIRS => 10,
+        //     CURLOPT_TIMEOUT => 30,
+        //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        //     CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
+        //     CURLOPT_POSTFIELDS => json_encode( $data ),
+        //     CURLOPT_HTTPHEADER => array(
+        //         'authorization: Bearer ' . $access_token,
+        //         'content-type: application/json'
+        //     ),
+        // ) );
 
-        $response = curl_exec( $curl );
-        $err = curl_error( $curl );
-        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
-        curl_close( $curl );
+        // $response = curl_exec( $curl );
+        // $err = curl_error( $curl );
+        // $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        // curl_close( $curl );
 
-        if ( $code == 401) { // access_token is expired
+        // if ( $code == 401) { // access_token is expired
+        //     return $this->create_product( $product_id, true );
+        // }
+
+        // if ($err) {
+        //     error_log( 'INFast API: Shipping created error:' . $err );
+        //     return false;
+        // } else {
+        //     $response = json_decode( $response, true );
+        //     $infast_product_id = $response['_id'];
+        //     update_post_meta( $product_id, '_infast_product_id', $infast_product_id );
+        //     return $infast_product_id;
+        // }
+
+        $headers = array(
+            'authorization' =>  'Bearer ' . $access_token,
+            'content-type'  =>  'application/json',
+        );
+
+        $args = array(
+            'body'        => json_encode( $data ),
+            'method'      => $request_type,
+            'headers'     => $headers,
+            'timeout'     => '30',
+            'redirection' => '10',
+            'httpversion' => '1.1',
+        );
+
+        $resp = wp_remote_request( $request_url, $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( $htttp_code == 401 ) { // access token is expired
             return $this->create_product( $product_id, true );
         }
 
-        if ($err) {
-            error_log( 'INFast API: Shipping created error:' . $err );
+        if ( is_wp_error( $resp ) ) {
+            $error_message = $resp->get_error_message();
+            error_log( 'INFast API: Shipping created error:' . $error_message );
             return false;
         } else {
-            $response = json_decode( $response, true );
+            $response = json_decode( $resp['body'], true );
             $infast_product_id = $response['_id'];
             update_post_meta( $product_id, '_infast_product_id', $infast_product_id );
-            return $infast_product_id;
+            return $infast_product_id;        
         }
 
     }
@@ -422,52 +534,87 @@ class Infast_Woocommerce_Api {
         }
 
         if ( $infast_product_id == NULL ) {
-            $curlopt_url = INFAST_API_URL . 'api/v1/products';
-            $curlopt_customrequest = 'POST';
+            $request_url = INFAST_API_URL . 'api/v1/products';
+            $request_type = 'POST';
         } else {
-            $curlopt_url = INFAST_API_URL . 'api/v1/products/' . $infast_product_id;
-            $curlopt_customrequest = 'PATCH';
+            $request_url = INFAST_API_URL . 'api/v1/products/' . $infast_product_id;
+            $request_type = 'PATCH';
         }
 
         $data = $this->create_product_prepare_data_shipping( $shipping_id, $item );
 
-        $curl = curl_init();
+        // $curl = curl_init();
 
-        curl_setopt_array( $curl, array(
-            CURLOPT_URL => $curlopt_url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
-            CURLOPT_POSTFIELDS => json_encode( $data ),
-            CURLOPT_HTTPHEADER => array(
-                'authorization: Bearer ' . $access_token,
-                'content-type: application/json'
-            ),
-        ) );
+        // curl_setopt_array( $curl, array(
+        //     CURLOPT_URL => $curlopt_url,
+        //     CURLOPT_RETURNTRANSFER => true,
+        //     CURLOPT_ENCODING => '',
+        //     CURLOPT_MAXREDIRS => 10,
+        //     CURLOPT_TIMEOUT => 30,
+        //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        //     CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
+        //     CURLOPT_POSTFIELDS => json_encode( $data ),
+        //     CURLOPT_HTTPHEADER => array(
+        //         'authorization: Bearer ' . $access_token,
+        //         'content-type: application/json'
+        //     ),
+        // ) );
 
-        $response = curl_exec( $curl );
-        $err = curl_error( $curl );
-        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
-        curl_close( $curl );
+        // $response = curl_exec( $curl );
+        // $err = curl_error( $curl );
+        // $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        // curl_close( $curl );
 
-        if ( $code == 401) { // access_token is expired
+        // if ( $code == 401) { // access_token is expired
+        //     return $this->create_product_shipping( $shipping_id, $method_id, $item, $infast_product_id, true );
+        // }
+
+        // if ($err) {
+        //     error_log( 'INFast API: Product created error:' . $err );
+        //     return false;
+        // } else {
+        //     $response = json_decode( $response, true );
+        //     $infast_shipping_id = $response['_id'];
+
+        //     $data_shipping = get_option( 'woocommerce_' . $method_id . '_' . $shipping_id . '_settings' );
+        //     $data_shipping['infast_shipping_id'] = $infast_shipping_id;
+        //     update_option( 'woocommerce_' . $method_id . '_' . $shipping_id . '_settings', $data_shipping );
+        //     return $infast_shipping_id;
+        // }
+
+        $headers = array(
+            'authorization' =>  'Bearer ' . $access_token,
+            'content-type'  =>  'application/json',
+        );
+
+        $args = array(
+            'body'        => json_encode( $data ),
+            'headers'     => $headers,
+            'method'      => $request_type,
+            'timeout'     => '30',
+            'redirection' => '10',
+            'httpversion' => '1.1',
+        );
+
+        $resp = wp_remote_request( $request_url, $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( $htttp_code == 401 ) { // access token is expired
             return $this->create_product_shipping( $shipping_id, $method_id, $item, $infast_product_id, true );
         }
 
-        if ($err) {
-            error_log( 'INFast API: Product created error:' . $err );
+        if ( is_wp_error( $resp ) ) {
+            $error_message = $resp->get_error_message();
+            error_log( 'INFast API: Product created error:' . $error_message );
             return false;
         } else {
-            $response = json_decode( $response, true );
+            $response = json_decode( $resp['body'], true );
             $infast_shipping_id = $response['_id'];
 
             $data_shipping = get_option( 'woocommerce_' . $method_id . '_' . $shipping_id . '_settings' );
             $data_shipping['infast_shipping_id'] = $infast_shipping_id;
             update_option( 'woocommerce_' . $method_id . '_' . $shipping_id . '_settings', $data_shipping );
-            return $infast_shipping_id;
+            return $infast_shipping_id;         
         }
 
     }
@@ -542,51 +689,87 @@ class Infast_Woocommerce_Api {
         $data = $this->create_customer_prepare_data( $user_id );
 
         if ( $infast_customer_id == NULL ) {
-            $curlopt_url = INFAST_API_URL . 'api/v1/customers';
-            $curlopt_customrequest = 'POST';
+            $request_url = INFAST_API_URL . 'api/v1/customers';
+            $request_type = 'POST';
         } else {
-            $curlopt_url = INFAST_API_URL . 'api/v1/customers/' . $infast_customer_id;
-            $curlopt_customrequest = 'PATCH';
+            $request_url = INFAST_API_URL . 'api/v1/customers/' . $infast_customer_id;
+            $request_type = 'PATCH';
         }
 
-        $curl = curl_init();
+        // $curl = curl_init();
 
-        curl_setopt_array( $curl, array(
-            CURLOPT_URL => $curlopt_url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
-            CURLOPT_POSTFIELDS => json_encode( $data ),
-            CURLOPT_HTTPHEADER => array(
-                'authorization: Bearer ' . $access_token,
-                'content-type: application/json'
-            ),
-        ) );
+        // curl_setopt_array( $curl, array(
+        //     CURLOPT_URL => $curlopt_url,
+        //     CURLOPT_RETURNTRANSFER => true,
+        //     CURLOPT_ENCODING => '',
+        //     CURLOPT_MAXREDIRS => 10,
+        //     CURLOPT_TIMEOUT => 30,
+        //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        //     CURLOPT_CUSTOMREQUEST => $curlopt_customrequest,
+        //     CURLOPT_POSTFIELDS => json_encode( $data ),
+        //     CURLOPT_HTTPHEADER => array(
+        //         'authorization: Bearer ' . $access_token,
+        //         'content-type: application/json'
+        //     ),
+        // ) );
 
-        $response = curl_exec( $curl );
-        $err = curl_error( $curl );
-        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
-        curl_close( $curl );
+        // $response = curl_exec( $curl );
+        // $err = curl_error( $curl );
+        // $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        // curl_close( $curl );
 
-        if ( $code == 401) { // access_token is expired
+        // if ( $code == 401) { // access_token is expired
+        //     return $this->create_customer( $user_id, $order_id, $infast_customer_id, true );
+        // }
+
+        // if ($err) {
+        //     if ( $order )
+        //         $order->add_order_note( 'INFast API: Customer created error:' . $err );
+        //     error_log( 'INFast API: Customer created error:' . $err );
+        //     return false;
+        // } else {
+        //     $response = json_decode( $response, true );
+        //     $customer_id = $response['_id'];
+        //     if ( $order )
+        //         $order->add_order_note( 'INFast API: Customer created ' . $customer_id );
+        //     update_user_meta( $user_id, '_infast_customer_id', $customer_id );
+        //     return $customer_id;
+        // }
+
+        $headers = array(
+            'authorization' =>  'Bearer ' . $access_token,
+            'content-type'  =>  'application/json',
+        );
+
+        $args = array(
+            'body'        => json_encode( $data ),
+            'headers'     => $headers,
+            'method'      => $request_type,
+            'timeout'     => '30',
+            'redirection' => '10',
+            'httpversion' => '1.1',
+        );
+
+        $resp = wp_remote_post( $request_url, $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( $htttp_code == 401 ) { // access token is expired
             return $this->create_customer( $user_id, $order_id, $infast_customer_id, true );
         }
 
-        if ($err) {
+        if ( is_wp_error( $resp ) ) {
+            $error_message = $resp->get_error_message();
             if ( $order )
-                $order->add_order_note( 'INFast API: Customer created error:' . $err );
+                $order->add_order_note( 'INFast API: Customer created error:' . $error_message );
             error_log( 'INFast API: Customer created error:' . $err );
             return false;
         } else {
-            $response = json_decode( $response, true );
+            $response = json_decode( $resp['body'], true );
             $customer_id = $response['_id'];
             if ( $order )
                 $order->add_order_note( 'INFast API: Customer created ' . $customer_id );
             update_user_meta( $user_id, '_infast_customer_id', $customer_id );
-            return $customer_id;
+            return $customer_id;     
         }
 
     }
@@ -656,40 +839,72 @@ class Infast_Woocommerce_Api {
 
         $data = $this->add_document_payment_prepare_data( $order_id );
 
-        $curl = curl_init();
+        // $curl = curl_init();
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => INFAST_API_URL . 'api/v1/documents/' . $document_id . '/payment',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_HTTPHEADER => array(
-                'authorization: Bearer ' . $access_token,
-                'content-type: application/json'
-            ),
-        ));
+        // curl_setopt_array($curl, array(
+        //     CURLOPT_URL => INFAST_API_URL . 'api/v1/documents/' . $document_id . '/payment',
+        //     CURLOPT_RETURNTRANSFER => true,
+        //     CURLOPT_ENCODING => '',
+        //     CURLOPT_MAXREDIRS => 10,
+        //     CURLOPT_TIMEOUT => 30,
+        //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        //     CURLOPT_CUSTOMREQUEST => 'POST',
+        //     CURLOPT_HTTPHEADER => array(
+        //         'authorization: Bearer ' . $access_token,
+        //         'content-type: application/json'
+        //     ),
+        // ));
 
-        $response = curl_exec( $curl );
-        $err = curl_error( $curl );
-        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
-        curl_close( $curl );
+        // $response = curl_exec( $curl );
+        // $err = curl_error( $curl );
+        // $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        // curl_close( $curl );
 
-        if ( $code == 401) { // access_token is expired
+        // if ( $code == 401) { // access_token is expired
+        //     return $this->add_document_payment( $order_id, $document_id, true );
+        // }
+
+        // if ($err) {
+        //     $order->add_order_note( 'INFast API: Add payment error:' . $err );
+        //     error_log( 'INFast API: Add payment error:' . $err );
+        //     return false;
+        // } else {
+        //     $response = json_decode( $response, true );
+        //     $payment_id = $response['_id'];
+        //     $order->add_order_note( 'INFast API: Payment added ' . $payment_id );
+        //     return $payment_id;
+        // }
+
+        $headers = array(
+            'authorization' =>  'Bearer ' . $access_token,
+            'content-type'  =>  'application/json',
+        );
+
+        $args = array(
+            'body'        => '',
+            'headers'     => $headers,
+            'timeout'     => '30',
+            'redirection' => '10',
+            'httpversion' => '1.1',
+        );
+
+        $resp = wp_remote_post( INFAST_API_URL . 'api/v1/documents/' . $document_id . '/payment', $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( $htttp_code == 401 ) { // access token is expired
             return $this->add_document_payment( $order_id, $document_id, true );
         }
 
-        if ($err) {
-            $order->add_order_note( 'INFast API: Add payment error:' . $err );
-            error_log( 'INFast API: Add payment error:' . $err );
+        if ( is_wp_error( $resp ) ) {
+            $error_message = $resp->get_error_message();
+            $order->add_order_note( 'INFast API: Add payment error:' . $error_message );
+            error_log( 'INFast API: Add payment error:' . $error_message );
             return false;
         } else {
-            $response = json_decode( $response, true );
+            $response = json_decode( $resp['body'], true );
             $payment_id = $response['_id'];
             $order->add_order_note( 'INFast API: Payment added ' . $payment_id );
-            return $payment_id;
+            return $payment_id;          
         }
 
     }
@@ -737,41 +952,73 @@ class Infast_Woocommerce_Api {
         if ( count ( $data ) == 0 )
             $data = new stdClass();
         
-        $curl = curl_init();
+        // $curl = curl_init();
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => INFAST_API_URL . 'api/v1/documents/' . $document_id . '/email',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode( $data ),
-            CURLOPT_HTTPHEADER => array(
-                'authorization: Bearer ' . $access_token,
-                'content-type: application/json'
-            ),
-        ));
+        // curl_setopt_array($curl, array(
+        //     CURLOPT_URL => INFAST_API_URL . 'api/v1/documents/' . $document_id . '/email',
+        //     CURLOPT_RETURNTRANSFER => true,
+        //     CURLOPT_ENCODING => '',
+        //     CURLOPT_MAXREDIRS => 10,
+        //     CURLOPT_TIMEOUT => 30,
+        //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        //     CURLOPT_CUSTOMREQUEST => 'POST',
+        //     CURLOPT_POSTFIELDS => json_encode( $data ),
+        //     CURLOPT_HTTPHEADER => array(
+        //         'authorization: Bearer ' . $access_token,
+        //         'content-type: application/json'
+        //     ),
+        // ));
 
-        $response = curl_exec( $curl );
-        $err = curl_error( $curl );
-        $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
-        curl_close( $curl );
+        // $response = curl_exec( $curl );
+        // $err = curl_error( $curl );
+        // $code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+        // curl_close( $curl );
 
-        if ( $code == 401) { // access_token is expired
+        // if ( $code == 401) { // access_token is expired
+        //     return $this->send_document_email( $order_id, $document_id, true );
+        // }
+
+        // if ($err) {
+        //     $order->add_order_note( 'INFast API: Send document by email error:' . $err );
+        //     error_log( 'INFast API: Document sent by email error:' . $err );
+        //     return false;
+        // } else {
+        //     $response = json_decode( $response, true );
+        //     $email_id = $response['_id'];
+        //     $order->add_order_note( 'INFast API: Document sent by email ' . $email_id );
+        //     return $email_id;
+        // }
+
+        $headers = array(
+            'authorization' =>  'Bearer ' . $access_token,
+            'content-type'  =>  'application/json',
+        );
+
+        $args = array(
+            'body'        => json_encode( $data ),
+            'headers'     => $headers,
+            'timeout'     => '30',
+            'redirection' => '10',
+            'httpversion' => '1.1',
+        );
+
+        $resp = wp_remote_post( INFAST_API_URL . 'api/v1/documents/' . $document_id . '/email', $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( $htttp_code == 401 ) { // access token is expired
             return $this->send_document_email( $order_id, $document_id, true );
         }
 
-        if ($err) {
-            $order->add_order_note( 'INFast API: Send document by email error:' . $err );
-            error_log( 'INFast API: Document sent by email error:' . $err );
+        if ( is_wp_error( $resp ) ) {
+            $error_message = $resp->get_error_message();
+            $order->add_order_note( 'INFast API: Send document by email error:' . $error_message );
+            error_log( 'INFast API: Document sent by email error:' . $error_message );
             return false;
         } else {
-            $response = json_decode( $response, true );
+            $response = json_decode( $resp['body'], true );
             $email_id = $response['_id'];
             $order->add_order_note( 'INFast API: Document sent by email ' . $email_id );
-            return $email_id;
+            return $email_id;           
         }
 
     }
