@@ -15,13 +15,15 @@
  * @wordpress-plugin
  * Plugin Name:       INFast
  * Plugin URI:        https://intia.fr/plugin-wordpress
- * Description:       Permet la création de factures INFast lors d\'une commande faite sous WooCommerce.
+ * Description:       Créez et envoyez par e-mail des factures conformes automatiquement à chaque commande passée sur votre e-boutique WooCommerce.
  * Version:           1.0.0
  * Author:            INTIA
  * Author URI:        https://intia.fr
- * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ * License:           GPLv3
+ * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain:       infast-woocommerce
+ * Requires at least: 5.6
+ * Requires PHP: 7.0* 
  */
 
 // If this file is called directly, abort.
