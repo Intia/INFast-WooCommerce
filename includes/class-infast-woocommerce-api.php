@@ -323,31 +323,37 @@ class Infast_Woocommerce_Api {
                 $infast_product_id = $this->create_product( $product->get_id(), $infast_product_id );
             }
 
-            $taxes = $tax->get_rates( $product->get_tax_class() );
-            $rates = array_shift( $taxes );
-            $item_rate = round( array_shift( $rates ) );
+            if ( wc_tax_enabled() ) {
+                $taxes = $tax->get_rates( $product->get_tax_class() );
+                $rates = array_shift( $taxes );
+                $item_rate = array_shift( $rates );
+            } else {
+                $item_rate = 0;
+            }
 
             $data['lines'][] = array(
                 'lineType' => 'product',
                 'productId' => $infast_product_id,
                 'quantity' => $item->get_quantity(),
-                'amount' => $item->get_total() - $item->get_total_tax(),
-                'vatPart' => floatval( $item->get_total_tax() ),
-                'amountVat' => floatval( $item->get_total() ),
-                'vat' => $item_rate,
+                'vat' => $item_rate, // VAT rate (ex : 20 for 20% VAT rate)
                 'description' => $product->get_short_description(),
+                'price' => $item->get_subtotal() / $item->get_quantity(), // Unit price excluding taxes
             );
 
         }
 
         foreach( $order->get_items( 'fee' ) as $item_id => $item ) {
 
-            $taxes = $tax->get_rates( $item->get_tax_class() );
-            $rates = array_shift( $taxes );
-            if ( $rates == NULL)
-                $item_rate = 0.00;
-            else
-                $item_rate = array_shift( $rates );
+            if ( wc_tax_enabled() ) {
+                $taxes = $tax->get_rates( $item->get_tax_class() );
+                $rates = array_shift( $taxes );
+                if ( $rates == NULL  || $item->get_total_tax() == "0" )
+                    $item_rate = 0.00;
+                else
+                    $item_rate = array_shift( $rates );
+            } else {
+                $item_rate = 0;
+            }
 
             $data['lines'][] = array(
                 'lineType' => 'product',
@@ -370,12 +376,24 @@ class Infast_Woocommerce_Api {
                 $infast_shipping_id = $this->create_product_shipping( $instance_id, $method_id, $item, $infast_shipping_id );
             }
 
+            if ( wc_tax_enabled() ) {
+                $taxes = $tax->get_rates( $item->get_tax_class() );
+                $rates = array_shift( $taxes );
+                if ( $rates == NULL || $item->get_total_tax() == "0" )
+                    $item_rate = 0.00;
+                else
+                    $item_rate = array_shift( $rates );
+            } else {
+                $item_rate = 0;
+            }
+
             $data['lines'][] = array(
                 'lineType' => 'product',
                 'productId' => $infast_shipping_id,
                 'price' => floatval( $item->get_total() ), // force use WP value, shipping method is not updated on INFast side
                 'vat' => floatval( $item_rate ),  // force use WP value, shipping method is not updated on INFast side
                 'quantity' => 1,
+                'isService' => true,
             );
 
         }
@@ -494,13 +512,17 @@ class Infast_Woocommerce_Api {
 
         $product = wc_get_product( $product_id );
 
-        $tax = new WC_Tax();
-        $taxes = $tax->get_rates( $product->get_tax_class() );
-        $rates = array_shift( $taxes );
-        if ( $rates == NULL)
-            $product_rate = 0.00;
-        else
-            $product_rate = array_shift( $rates );
+        if ( wc_tax_enabled() ) {
+            $tax = new WC_Tax();
+            $taxes = $tax->get_rates( $product->get_tax_class() );
+            $rates = array_shift( $taxes );
+            if ( $rates == NULL)
+                $product_rate = 0.00;
+            else
+                $product_rate = array_shift( $rates );
+        } else {
+            $product_rate = 0;
+        }
 
         $data = array();
 
@@ -642,13 +664,17 @@ class Infast_Woocommerce_Api {
 
                 if ( $shipping_idx == $shipping_id ) {
 
-                    $tax = new WC_Tax();
-                    $taxes = $tax->get_rates( $item->get_tax_class() );
-                    $rates = array_shift( $taxes );
-                    if ( $rates == NULL)
-                        $item_rate = 0.00;
-                    else
-                        $item_rate = array_shift( $rates );
+                    if ( wc_tax_enabled() ) {
+                        $tax = new WC_Tax();
+                        $taxes = $tax->get_rates( $item->get_tax_class() );
+                        $rates = array_shift( $taxes );
+                        if ( $rates == NULL  || $item->get_total_tax() == "0" )
+                            $item_rate = 0.00;
+                        else
+                            $item_rate = array_shift( $rates );
+                    } else {
+                        $product_rate = 0;
+                    }
 
                     $data['name'] = $shipping->title;
                     $data['price'] = floatval( $shipping->cost );
