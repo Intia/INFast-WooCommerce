@@ -318,7 +318,7 @@ class Infast_Woocommerce_Api {
         }
 
         $data['discount']['type'] = 'CASH';
-        $data['discount']['amount'] = floatval( $order->get_discount_total() ) - floatval( $order->get_discount_tax() );
+        $data['discount']['amount'] = floatval( $order->get_discount_total() );
 
         return $data;
 
@@ -410,7 +410,7 @@ class Infast_Woocommerce_Api {
         $data = array();
 
         $data['name'] = $product->get_name();
-        $data['price'] = floatval( $product->get_price() );
+        $data['price'] = floatval( wc_get_price_excluding_tax( $product ) );
         $data['vat'] = $product_rate;
         $data['reference'] = $product->get_sku() ? $product->get_sku() : strval( $product->get_id() );
         $data['description'] = $product->get_short_description();
@@ -636,7 +636,8 @@ class Infast_Woocommerce_Api {
         $data['delivery']['address']['street'] = $shipping_street;
         $data['delivery']['address']['postalCode'] = get_user_meta( $user_id, 'shipping_postcode', true );
         $data['delivery']['address']['city'] = get_user_meta( $user_id, 'shipping_city', true );
-        $data['delivery']['address']['country'] = WC()->countries->countries[ $shipping_country ];
+        if ( WC()->countries->countries[ $shipping_country ] != NULL )
+            $data['delivery']['address']['country'] = WC()->countries->countries[ $shipping_country ];
         if ( $shipping_street && $shipping_country ) {
             $data['useDelivery'] = true;
             $data['sendToDelivery'] = true;
