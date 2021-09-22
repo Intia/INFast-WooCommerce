@@ -12,9 +12,9 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Créez et envoyez par e-mail des factures conformes automatiquement à chaque commande passée sur votre e-boutique WooCommerce.
 
 == Description ==
-Cette extension vous permet de générer automatiquement des factures lorsqu’une vente est effectuée sur votre e-boutique WooCommerce et de synchroniser vos comptes Woocommerce et INFast..   
+Cette extension vous permet de générer automatiquement des factures lorsqu’une vente est effectuée sur votre e-boutique WooCommerce et de synchroniser vos comptes Woocommerce et INFast.  
   
-INFast est un logiciel de vente 100% français qui vous fait gagner du temps en automatisant vos devis, factures, avoirs.  
+INFast est un logiciel de facturation 100% français qui vous fait gagner du temps en automatisant vos devis, factures, avoirs.  
 Grâce à une interface intuitive, vous gérez les commandes manuelles, et paiements hors boutique en ligne, fiches clients et produits depuis n\’importe quel support (tablette, ordinateur, smartphone). INFast s’adresse aussi bien aux auto-entrepreneurs, qu\’aux TPE et PME souhaitant se conformer aux exigences de la réglementation française, notamment en matière de facturation. Service client par tchat 7/7 et [par téléphone sur rendez-vous](https://calendly.com/intia-devis-factures/renseignement-plugin-woocomerce).
 
   
@@ -31,7 +31,7 @@ Grâce à une interface intuitive, vous gérez les commandes manuelles, et paiem
 **Consulter l’exemple de facture disponible depuis un portail personnalisé pour voir la facturation INFast en action**
 [Exemple de facture](https://inbox.intia.fr/ckto6edjy00f6j2uka1z4elyi)
 = Les avantages à utiliser l’extension INFast pour WooCommerce =
-En plus de gagner du temps avec l’automatisation de la facturation et de la synchronisation des données clients et articles, vous pouvez accédez à d’autres fonctionnalités directement depuis le logiciel devis factures INFast, comme :
+En plus de gagner du temps avec l’automatisation de la facturation et de la synchronisation des données clients et articles, vous pouvez accéder à d’autres fonctionnalités directement depuis le logiciel devis factures INFast, comme :
 
 - le choix de la numérotation des factures
 - la personnalisation de vos factures avec votre logo 
@@ -102,4 +102,3 @@ En revanche une mise à jour dans INFast n’entraîne pas de mise à jour dans 
 - Synchronisation de tous les articles WooCommerce dans INFast
 - Possibilité d\'activer ou non l\'envoi d\'e-mails
 - Possibilité d\'ajouter un destinataire en copie des envois d\’e-mails
-
