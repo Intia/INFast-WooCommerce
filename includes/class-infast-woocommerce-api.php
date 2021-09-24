@@ -250,6 +250,13 @@ class Infast_Woocommerce_Api {
                 $item_rate = 0;
             }
 
+            $price_with_discount = floatval( $item->get_total() );
+            $price_without_discount = floatval( $item->get_subtotal() );
+            if ( $price_with_discount == $price_without_discount )
+                $discount_percent = 0;
+            else
+                $discount_percent = 100 - ( ( 100 * $price_with_discount ) / $price_without_discount );
+
             $data['lines'][] = array(
                 'lineType' => 'product',
                 'productId' => $infast_product_id,
@@ -257,6 +264,7 @@ class Infast_Woocommerce_Api {
                 'vat' => $item_rate, // VAT rate (ex : 20 for 20% VAT rate)
                 'description' => $product->get_short_description(),
                 'price' => $item->get_subtotal() / $item->get_quantity(), // Unit price excluding taxes
+                'discount'  => $discount_percent,
             );
 
         }
@@ -317,8 +325,8 @@ class Infast_Woocommerce_Api {
 
         }
 
-        $data['discount']['type'] = 'CASH';
-        $data['discount']['amount'] = floatval( $order->get_discount_total() );
+        // $data['discount']['type'] = 'CASH';
+        // $data['discount']['amount'] = floatval( $order->get_discount_total() );
 
         return $data;
 
