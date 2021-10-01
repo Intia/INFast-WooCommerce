@@ -123,13 +123,15 @@ class Infast_Woocommerce_Admin_Settings {
 	public function infast_woocommerce_client_secret_render() {
 
 	    $options = get_option( 'infast_woocommerce' );
-	    $value = $options['client_secret'];
-	    if ( $value )
-	    	$value = '*******************************';
+	    if ( array_key_exists( 'client_secret', $options ) ) {
+		    $value = $options['client_secret'];
+		    if ( ! empty( $value ) )
+		    	$value = '*******************************';
+		} else
+			$value = '';
 	    ?>
 	    <input type='text' name='infast_woocommerce[client_secret]' value='<?php echo esc_attr( $value ); ?>'>
 	    <?php
-
 	}
 
 	/**
@@ -182,7 +184,7 @@ class Infast_Woocommerce_Admin_Settings {
 		    	if ( $idx == 'client_secret' ) {
 		    		if ( strpos( $input[$idx], '*' ) !== false || $input[$idx] == get_option( 'infast_woocommerce' )['client_secret'] ) {
 			    		$output[$idx] = get_option( 'infast_woocommerce' )['client_secret'];
-			    	} else {
+			    	} else if ( ! empty( $value ) ) {
 			    		$output[$idx] = $this->encrypt_key( $value );
 			    	}
 		    	} else {
@@ -244,9 +246,9 @@ class Infast_Woocommerce_Admin_Settings {
 	public function infast_option_updated( $option, $old_value, $value ) {
 
 		if ( $option == 'infast_woocommerce' ) {
-			if ( ! empty( $value['client_id'] ) && ! empty( $value['client_secret'] ) &&
-				 $value['client_id'] != $old_value['client_id'] ||
-				 $value['client_secret'] != $old_value['client_secret'] ) {
+			if ( ( ! empty( $value['client_id'] ) && ! empty( $value['client_secret'] ) ) &&
+				 ( $value['client_id'] != $old_value['client_id'] ||
+				 $value['client_secret'] != $old_value['client_secret'] ) ) {
 
 				$infast_api = Infast_Woocommerce_Api::getInstance();
 				$access_token = $infast_api->get_oauth2_token( true );

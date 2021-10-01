@@ -95,7 +95,7 @@ class Infast_Woocommerce_Api {
 
         if ( is_wp_error( $resp ) ) {
 
-            $error_message = $response->get_error_message();
+            $error_message = $resp->get_error_message();
             error_log( 'INFast WooCommerce - Get OAuth2 access token : ' . $error_message );
             update_option( 'infast_access_token', false );
             return false;
