@@ -37,7 +37,6 @@ On WP admin:
 - go on WooCommerce => Settings 
 - General tab: and check the "Enable tax rates and calculations" option => SAVE 
 - Tax tab: 
-  - Check : Yes, I will enter prices inclusive of tax => SAVE
   - Click "Standard rates" and insert a new a tax 20%, uncheck "Shipping" => SAVE
 
 **Add shipping method:**
