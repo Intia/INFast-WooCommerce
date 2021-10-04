@@ -1,4 +1,4 @@
-=== INFast ===
+=== INFast pour WooCommerce ===
 Contributors: intia
 Tags: invoice, facture, infast, intia, woocommerce
 Requires at least: 5.6
@@ -54,7 +54,7 @@ En plus de gagner du temps avec l’automatisation de la facturation et de la sy
 * MySQL 5.6 ou ultérieur
 - WordPress 3.1 ou ultérieure
 - WooCommerce 5.6 ou ultérieure
-- Un compte [INFast](https://intia.fr/fr/infast/) sur l’offre FURIOUS
+- Un compte [INFast](https://intia.fr/fr/infast/) sur l’offre FURIOUS :feu:
 
 = Installation =
 Depuis l'administration de Wordpress : 

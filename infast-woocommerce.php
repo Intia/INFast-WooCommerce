@@ -13,7 +13,7 @@
  * @package           Infast_Woocommerce
  *
  * @wordpress-plugin
- * Plugin Name:       INFast
+ * Plugin Name:       INFast pour WooCommerce
  * Plugin URI:        https://intia.fr/plugin-wordpress
  * Description:       Créez et envoyez par e-mail des factures conformes automatiquement à chaque commande passée sur votre e-boutique WooCommerce.
  * Version:           1.0.1
