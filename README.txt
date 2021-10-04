@@ -93,6 +93,10 @@ Dès qu'un article est créé ou modifié dans WooCommerce, il sera également c
 En revanche une mise à jour dans INFast n’entraîne pas de mise à jour dans WooCommerce.  
 
 == Changelog ==
+= Version 1.0.1 =
+- Correction dans le fichier ReadMe
+- Contenue de la GPLv3 dans le fichier Licence.txt
+
 = Version 1.0.0 =
 - Création des clients dans INFast dès la création dans WooCommerce
 - Mise à jour des clients dans INFast dès la mise à jour dans WooCommerce
@@ -102,3 +106,4 @@ En revanche une mise à jour dans INFast n’entraîne pas de mise à jour dans 
 - Synchronisation de tous les articles WooCommerce dans INFast
 - Possibilité d'activer ou non l'envoi d'e-mails
 - Possibilité d'ajouter un destinataire en copie des envois d’e-mails
+
