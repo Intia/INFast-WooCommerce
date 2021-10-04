@@ -1,6 +1,6 @@
 === INFast ===
 Contributors: intia
-Tags: invoice, facture, infast, intia
+Tags: invoice, facture, infast, intia, woocommerce
 Requires at least: 5.6
 Tested up to: 5.8
 Requires PHP: 7.2
