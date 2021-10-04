@@ -77,14 +77,14 @@ Pour ajouter des produits déjà existants sur WooCommerce dans votre compte INF
   
 == Frequently Asked Questions ==
 = Est-ce que ce plugin fonctionne sans WooCommerce ? =
-Non, ce plugin est dédié à la synchronisation des commandes WooCommerce dans INFast
+Non, ce plugin est dédié à la synchronisation des commandes WooCommerce dans INFast.
 
 = Est-ce que ce plugin est gratuit ? =
 Oui, ce plugin est gratuit mais nécessite d’avoir un compte INFast actif.  
 Vous devez également posséder un compte WooCommerce.  
 
-= Est ce qu'INFast est gratuit ? =
-INFast est gratuit pendant 30 jours.  
+= Est-ce qu'INFast est gratuit ? =
+INFast est gratuit pendant 30 jours.
 Vous devrez ensuite vous abonner à l'offre FURIOUS pour disposer des accès API permettant l’interconnexion avec WooCommerce.  
 
 = Les articles sont-ils mis à jour automatiquement ? =
