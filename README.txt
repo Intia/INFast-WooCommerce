@@ -4,7 +4,7 @@ Tags: invoice, facture, infast, intia, woocommerce
 Requires at least: 5.6
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -93,6 +93,9 @@ Dès qu'un article est créé ou modifié dans WooCommerce, il sera également c
 En revanche une mise à jour dans INFast n’entraîne pas de mise à jour dans WooCommerce.  
 
 == Changelog ==
+= Version 1.0.2 =
+- Mise à jour de la page plugin du site INFast
+
 = Version 1.0.1 =
 - Correction dans le fichier ReadMe
 - Contenue de la GPLv3 dans le fichier Licence.txt

@@ -56,3 +56,10 @@ On WP admin:
 - go on WooCommerce => INFast : set ClientId and ClientSecret
 
 
+=== Send new version to SVN ===
+- Change version in infast-woocommerce.php
+- Change stage version in README.txt
+- Add a release description for this version
+
+- Create a tag: svn copy trunk tags/1.2.3
+- Push: svn ci -m "commit message"
