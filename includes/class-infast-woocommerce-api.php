@@ -189,8 +189,14 @@ class Infast_Woocommerce_Api {
         $resp = wp_remote_post( INFAST_API_URL . 'api/v1/documents', $args );
         $http_code = wp_remote_retrieve_response_code( $resp );
 
-        if ( $htttp_code == 401 ) { // access token is expired
+        if ( $http_code == 401) { // access token is expired
+            if(!$force) {
             return $this->create_document( $order_id, $customer_id, true );
+        }
+
+            $order->add_order_note( 'INFast API: Document created error: authentication failed');
+            error_log( 'INFast API: Document created error: authentication failed');
+            return false;
         }
 
         if ( is_wp_error( $resp ) ) {
@@ -375,8 +381,13 @@ class Infast_Woocommerce_Api {
         $resp = wp_remote_request( $request_url, $args );
         $http_code = wp_remote_retrieve_response_code( $resp );
 
-        if ( $htttp_code == 401 ) { // access token is expired
+        if ( $http_code == 401 ) { // access token is expired
+            if(!$force) {
             return $this->create_product( $product_id, true );
+        }
+
+            error_log( 'INFast API: Shipping created error: Authentication failed' );
+            return false;
         }
 
         if ( is_wp_error( $resp ) ) {
@@ -473,8 +484,13 @@ class Infast_Woocommerce_Api {
         $resp = wp_remote_request( $request_url, $args );
         $http_code = wp_remote_retrieve_response_code( $resp );
 
-        if ( $htttp_code == 401 ) { // access token is expired
+        if ( $http_code == 401 ) { // access token is expired
+            if(!$force) {
             return $this->create_product_shipping( $shipping_id, $method_id, $item, $infast_product_id, true );
+        }
+
+            error_log( 'INFast API: Product created error: Athentication failed' );
+            return false;
         }
 
         if ( is_wp_error( $resp ) ) {
@@ -591,8 +607,16 @@ class Infast_Woocommerce_Api {
         $resp = wp_remote_post( $request_url, $args );
         $http_code = wp_remote_retrieve_response_code( $resp );
 
-        if ( $htttp_code == 401 ) { // access token is expired
+        if ( $http_code == 401 ) { // access token is expired
+            if(!$force) {
             return $this->create_customer( $user_id, $order_id, $infast_customer_id, true );
+        }
+
+            if ( $order ) {
+                $order->add_order_note( 'INFast API: Customer created error: Authentication failed' );
+            }
+            error_log( 'INFast API: Customer created error: Authentication failed' );
+            return false;
         }
 
         if ( is_wp_error( $resp ) ) {
@@ -694,8 +718,14 @@ class Infast_Woocommerce_Api {
         $resp = wp_remote_post( INFAST_API_URL . 'api/v1/documents/' . $document_id . '/payment', $args );
         $http_code = wp_remote_retrieve_response_code( $resp );
 
-        if ( $htttp_code == 401 ) { // access token is expired
+        if ( $http_code == 401 ) { // access token is expired
+            if(!$force) {
             return $this->add_document_payment( $order_id, $document_id, true );
+        }
+
+            $order->add_order_note( 'INFast API: Add payment error: Authentication failed' );
+            error_log( 'INFast API: Add payment error: Authentication failed');
+            return false;
         }
 
         if ( is_wp_error( $resp ) ) {
@@ -771,8 +801,14 @@ class Infast_Woocommerce_Api {
         $resp = wp_remote_post( INFAST_API_URL . 'api/v1/documents/' . $document_id . '/email', $args );
         $http_code = wp_remote_retrieve_response_code( $resp );
 
-        if ( $htttp_code == 401 ) { // access token is expired
+        if ( $http_code == 401 ) { // access token is expired
+            if(!$force) {
             return $this->send_document_email( $order_id, $document_id, true );
+        }
+
+            $order->add_order_note( 'INFast API: Send document by email error: Authentication failed' );
+            error_log( 'INFast API: Document sent by email error: Authentication failed' );
+            return false;
         }
 
         if ( is_wp_error( $resp ) ) {
