@@ -110,7 +110,7 @@ class Infast_Woocommerce_Admin_Settings {
 
 	    $options = get_option( 'infast_woocommerce' );
 	    ?>
-	    <input type='text' name='infast_woocommerce[client_id]' value='<?php echo esc_attr( $options['client_id'] ); ?>'>
+	    <input type='text' name='infast_woocommerce[client_id]' id="infast-client-id" value='<?php echo esc_attr( $options['client_id'] ); ?>'>
 	    <?php
 
 	}
@@ -130,7 +130,7 @@ class Infast_Woocommerce_Admin_Settings {
 		} else
 			$value = '';
 	    ?>
-	    <input type='text' name='infast_woocommerce[client_secret]' value='<?php echo esc_attr( $value ); ?>'>
+	    <input type='text' name='infast_woocommerce[client_secret]' id="infast-client-secret" value='<?php echo esc_attr( $value ); ?>'>
 	    <?php
 	}
 
@@ -176,16 +176,27 @@ class Infast_Woocommerce_Admin_Settings {
 	 * @since    1.0.0
 	 */
 	public function infast_sanitize_inputs( $input ) {
-
 		$output = array();
 		foreach( $input as $idx => $value ) {
-		    if( isset( $input[$idx] ) ) {
 
+			// error_log( 'FIXME LOG infast_sanitize_inputs idx:'. $idx . ' value:'. $value );
+
+			if( isset( $input[$idx] ) ) {
 		    	if ( $idx == 'client_secret' ) {
-		    		if ( strpos( $input[$idx], '*' ) !== false || $input[$idx] == get_option( 'infast_woocommerce' )['client_secret'] ) {
-			    		$output[$idx] = get_option( 'infast_woocommerce' )['client_secret'];
+					$infast_api = Infast_Woocommerce_Api::getInstance();
+
+					$oldClientSecret = get_option( 'infast_woocommerce' )['client_secret'];
+					$oldClientSecretDecrypted = $infast_api->decrypt_key( $oldClientSecret );
+
+					// BUG ???
+					// I don't understand why we pass twice in infast_sanitize_inputs
+					// We pass a first time, and we encrypt the clientSecret
+					// During the second pass $oldClientSecret is empty but $input[$idx] as the value of the encrypted clientSecret of the fist pass.
+					// => We encrypt the clientSecret again
+		    		if ( strpos( $input[$idx], '*' ) !== false || $input[$idx] == $oldClientSecretDecrypted ) {
+			    		$output[$idx] = $oldClientSecret;
 			    	} else if ( ! empty( $value ) ) {
-			    		$output[$idx] = $this->encrypt_key( $value );
+			    		$output[$idx] = $infast_api->encrypt_key( $value );
 			    	}
 		    	} else {
 		        	$output[$idx] = strip_tags( stripslashes( $input[ $idx ] ) );
@@ -197,21 +208,6 @@ class Infast_Woocommerce_Admin_Settings {
 
 	}
 
-	/**
-	 * Encrypt a key
-	 *
-	 * @since    1.0.0
-	 * @param    string     $string    key to encrypt
-	 */
-	public function encrypt_key( $string )
-	{
-	    $encrypt_method = 'AES-256-CBC';
-	    $key = hash( 'sha256',  get_option( 'infast_saltkey_1' ) );
-	    $iv = substr( hash( 'sha256',  get_option( 'infast_saltkey_2' ) ), 0, 16 ); // sha256 is hash_hmac_algo
-	    $output = openssl_encrypt( $string, $encrypt_method, $key, 0, $iv );
-	    $output = base64_encode( $output );
-	    return $output;
-	}
 
 	/**
 	 * HTML render of our settings page
@@ -232,10 +228,13 @@ class Infast_Woocommerce_Admin_Settings {
 
 	    </form>
 
+		<h2><?php _e( 'Tester la connexion à INFast', 'infast-woocommerce' ); ?></h2>
+	    <button type="button" class="button button-primary infast-test-btn"><?php _e( 'Tester la connexion', 'infast-woocommerce' ); ?></button>
+		</br>
+		
 	    <h2><?php _e( 'Synchroniser les produits', 'infast-woocommerce' ); ?></h2>
 	    <button type="button" class="button button-primary infast-syncall-btn"><?php _e( 'Lancer la synchronisation', 'infast-woocommerce' ); ?></button>
 	    <?php
-
 	}
 
 	/**
@@ -286,10 +285,17 @@ class Infast_Woocommerce_Admin_Settings {
 	}
 
 	public function infast_synchronise_all() {
-
 		$this->admin->synchronise_all();
 		wp_send_json_success();
-
 	}
 
+	public function infast_test_authentication() {
+		$name = $this->admin->test_authentication();
+		if($name) {
+			wp_send_json_success($name);
+		} else {
+			wp_send_json_error();
+		}		
+	}
+	
 }

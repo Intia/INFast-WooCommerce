@@ -176,6 +176,7 @@ class Infast_Woocommerce {
 		$this->loader->add_action( 'updated_option', $plugin_admin_settings, 'infast_option_updated', 10, 3 );
 		$this->loader->add_action( 'admin_init', $plugin_admin_settings, 'infast_shipping_add_infast_id_field_filter' );
 		$this->loader->add_action( 'wp_ajax_infast_synchronise_all', $plugin_admin_settings, 'infast_synchronise_all' );
+		$this->loader->add_action( 'wp_ajax_infast_test_authentication', $plugin_admin_settings, 'infast_test_authentication' );
 
 	}
 

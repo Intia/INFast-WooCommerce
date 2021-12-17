@@ -42,7 +42,7 @@ define( 'INFAST_WOOCOMMERCE_VERSION', '1.0.0' );
  * URL used for API calls
  */
 define( 'INFAST_API_URL', 'https://app.intia.fr/' );
-// define( 'INFAST_API_URL', 'https://app.demo.intia.fr/' );
+// define( 'INFAST_API_URL', 'http://localhost:3000/' );
 
 /**
  * The code that runs during plugin activation.

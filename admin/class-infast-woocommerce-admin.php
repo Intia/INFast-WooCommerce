@@ -90,6 +90,18 @@ class Infast_Woocommerce_Admin {
 	}
 
 	/**
+	 * This function test authentication
+	 *
+	 * @since    1.0.3
+	 */
+	public function test_authentication() {
+
+		$infast_api = Infast_Woocommerce_Api::getInstance();
+		return $infast_api->test_authentication();
+		
+	}
+
+	/**
 	 * This function synchronise all WooCommerce products to INFast
 	 *
 	 * @since    1.0.0

@@ -42,17 +42,45 @@ class Infast_Woocommerce_Api {
     }
 
     /**
+	 * Encrypt a key
+	 *
+	 * @since    1.0.0
+	 * @param    string     $string    key to encrypt
+	 */
+	public function encrypt_key( $string )
+	{
+		$salt1 = get_option( 'infast_saltkey_1' );
+        $salt2 = get_option( 'infast_saltkey_2' );
+
+	    $encrypt_method = 'AES-256-CBC';
+	    $key = hash( 'sha256', $salt1 );
+	    $iv = substr( hash( 'sha256', $salt2 ), 0, 16 ); // sha256 is hash_hmac_algo
+	    $output = openssl_encrypt( $string, $encrypt_method, $key, 0, $iv );
+	    $output = base64_encode( $output );
+        
+        // error_log( 'FIXME LOG ENCRYPT: salt1 : ' . $salt1 . ', salt2: ' . $salt2 . ', value: ' . $string . ', encrpt: ' .$output);
+
+	    return $output;
+	}
+
+    /**
      * Decrypt key
      *
      * @since    1.0.0
      * @param      string    $string       The key
      */
-    protected function decrypt_key( $string )
+    public function decrypt_key( $string )
     {
+        $salt1 = get_option( 'infast_saltkey_1' );
+        $salt2 = get_option( 'infast_saltkey_2' );
+
         $encrypt_method = 'AES-256-CBC';
-        $key = hash( 'sha256', get_option( 'infast_saltkey_1' ) );
-        $iv = substr( hash( 'sha256',  get_option( 'infast_saltkey_2' ) ), 0, 16 ); // sha256 is hash_hmac_algo
+        $key = hash( 'sha256', $salt1 );
+        $iv = substr( hash( 'sha256',  $salt2 ), 0, 16 ); // sha256 is hash_hmac_algo
         $output = openssl_decrypt( base64_decode( $string ), $encrypt_method, $key, 0, $iv );
+        
+        // error_log( 'FIXME LOG DECRYPT: salt1 : ' . $salt1 . ', salt2: ' . $salt2 . ', value: ' . $string . ', decrpt: ' .$output);
+
         return $output;
     }
 
@@ -120,6 +148,48 @@ class Infast_Woocommerce_Api {
         }
 
         
+    }
+
+    public function test_authentication( $force = false ) {
+        $access_token = $this->get_oauth2_token( $force );
+        if ( $access_token == false ) {
+            error_log( 'INFast API: Failed to test authentication' );
+            return false;
+        }
+
+        $headers = array(
+            'authorization' =>  'Bearer ' . $access_token,
+            'content-type'  =>  'application/json',
+        );
+
+        $args = array(
+            'headers'     => $headers,
+            'timeout'     => '30',
+            'redirection' => '10',
+            'httpversion' => '1.1',
+        );
+
+        $resp = wp_remote_get( INFAST_API_URL . 'api/v1/me', $args );
+        $http_code = wp_remote_retrieve_response_code( $resp );
+
+        if ( $http_code == 401 ) { // access token is expired
+            if(!$force) {
+                return $this->test_authentication( true );
+            }
+
+            error_log( 'INFast API: Failed to test authentication' );
+            return false;
+        }
+
+        if ( is_wp_error( $resp ) ) {
+            $error_message = $resp->get_error_message();
+            error_log( 'INFast API: Failed to test authentication' );
+            return false;
+        } else {
+            $response = json_decode( $resp['body'], true );
+            $me = $response['name'];
+            return $me;            
+        }
     }
 
     /**
@@ -191,8 +261,8 @@ class Infast_Woocommerce_Api {
 
         if ( $http_code == 401) { // access token is expired
             if(!$force) {
-            return $this->create_document( $order_id, $customer_id, true );
-        }
+                return $this->create_document( $order_id, $customer_id, true );
+            }
 
             $order->add_order_note( 'INFast API: Document created error: authentication failed');
             error_log( 'INFast API: Document created error: authentication failed');
@@ -383,8 +453,8 @@ class Infast_Woocommerce_Api {
 
         if ( $http_code == 401 ) { // access token is expired
             if(!$force) {
-            return $this->create_product( $product_id, true );
-        }
+                return $this->create_product( $product_id, true );
+            }
 
             error_log( 'INFast API: Shipping created error: Authentication failed' );
             return false;
@@ -486,9 +556,9 @@ class Infast_Woocommerce_Api {
 
         if ( $http_code == 401 ) { // access token is expired
             if(!$force) {
-            return $this->create_product_shipping( $shipping_id, $method_id, $item, $infast_product_id, true );
-        }
-
+                return $this->create_product_shipping( $shipping_id, $method_id, $item, $infast_product_id, true );
+            }
+            
             error_log( 'INFast API: Product created error: Athentication failed' );
             return false;
         }
@@ -609,8 +679,8 @@ class Infast_Woocommerce_Api {
 
         if ( $http_code == 401 ) { // access token is expired
             if(!$force) {
-            return $this->create_customer( $user_id, $order_id, $infast_customer_id, true );
-        }
+                return $this->create_customer( $user_id, $order_id, $infast_customer_id, true );
+            }
 
             if ( $order ) {
                 $order->add_order_note( 'INFast API: Customer created error: Authentication failed' );
@@ -720,8 +790,8 @@ class Infast_Woocommerce_Api {
 
         if ( $http_code == 401 ) { // access token is expired
             if(!$force) {
-            return $this->add_document_payment( $order_id, $document_id, true );
-        }
+                return $this->add_document_payment( $order_id, $document_id, true );
+            }
 
             $order->add_order_note( 'INFast API: Add payment error: Authentication failed' );
             error_log( 'INFast API: Add payment error: Authentication failed');
@@ -803,8 +873,8 @@ class Infast_Woocommerce_Api {
 
         if ( $http_code == 401 ) { // access token is expired
             if(!$force) {
-            return $this->send_document_email( $order_id, $document_id, true );
-        }
+                return $this->send_document_email( $order_id, $document_id, true );
+            }
 
             $order->add_order_note( 'INFast API: Send document by email error: Authentication failed' );
             error_log( 'INFast API: Document sent by email error: Authentication failed' );
