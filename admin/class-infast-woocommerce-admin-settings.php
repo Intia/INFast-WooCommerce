@@ -93,7 +93,7 @@ class Infast_Woocommerce_Admin_Settings {
 
 	    add_settings_field(
 	        'infast_woocommerce_cc_email',
-	        __( 'Envoyer une copie des emails à cet adresse', 'infast-woocommerce' ),
+	        __( 'Envoyer une copie des emails à cette adresse', 'infast-woocommerce' ),
 	        array( $this, 'infast_woocommerce_cc_email_render' ),
 	        'infast-woocommerce',
 	        'infast_woocommerce_section'
