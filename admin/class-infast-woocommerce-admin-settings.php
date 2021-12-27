@@ -123,8 +123,10 @@ class Infast_Woocommerce_Admin_Settings {
 	public function infast_woocommerce_client_secret_render() {
 
 	    $options = get_option( 'infast_woocommerce' );
-	    if ( array_key_exists( 'client_secret', $options ) ) {
+	    if ( $options && array_key_exists( 'client_secret', $options ) ) {
 		    $value = $options['client_secret'];
+		    $infast_api = Infast_Woocommerce_Api::getInstance();
+		    echo $infast_api->decrypt_key( $value );
 		    if ( ! empty( $value ) )
 		    	$value = '*******************************';
 		} else
@@ -193,8 +195,18 @@ class Infast_Woocommerce_Admin_Settings {
 					// We pass a first time, and we encrypt the clientSecret
 					// During the second pass $oldClientSecret is empty but $input[$idx] as the value of the encrypted clientSecret of the fist pass.
 					// => We encrypt the clientSecret again
+
+					/* Added by Damien on 27/12/2021 :
+					This bug is known since several years: https://core.trac.wordpress.org/ticket/21989
+					To work around this, we add a '~' at the start of the encrypted key
+					'~' is not a possible character of encrypted key
+					So if we find it at the start of the key, it means the key has already been encrypted, we can keep it like this
+					In consequence, the decrypting function is now removing the first '~' when used
+					*/
 		    		if ( strpos( $input[$idx], '*' ) !== false || $input[$idx] == $oldClientSecretDecrypted ) {
 			    		$output[$idx] = $oldClientSecret;
+			    	} else if ( $input[$idx][0] == '~' ) {
+			    		$output[$idx] = $input[$idx];
 			    	} else if ( ! empty( $value ) ) {
 			    		$output[$idx] = $infast_api->encrypt_key( $value );
 			    	}

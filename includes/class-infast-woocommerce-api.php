@@ -60,7 +60,7 @@ class Infast_Woocommerce_Api {
         
         // error_log( 'FIXME LOG ENCRYPT: salt1 : ' . $salt1 . ', salt2: ' . $salt2 . ', value: ' . $string . ', encrpt: ' .$output);
 
-	    return $output;
+	    return '~' . $output;
 	}
 
     /**
@@ -69,8 +69,9 @@ class Infast_Woocommerce_Api {
      * @since    1.0.0
      * @param      string    $string       The key
      */
-    public function decrypt_key( $string )
-    {
+    public function decrypt_key( $string ) {
+
+        $string = ltrim( $string, '~' );
         $salt1 = get_option( 'infast_saltkey_1' );
         $salt2 = get_option( 'infast_saltkey_2' );
 
