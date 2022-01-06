@@ -126,7 +126,6 @@ class Infast_Woocommerce_Admin_Settings {
 	    if ( $options && array_key_exists( 'client_secret', $options ) ) {
 		    $value = $options['client_secret'];
 		    $infast_api = Infast_Woocommerce_Api::getInstance();
-		    echo $infast_api->decrypt_key( $value );
 		    if ( ! empty( $value ) )
 		    	$value = '*******************************';
 		} else
@@ -180,9 +179,6 @@ class Infast_Woocommerce_Admin_Settings {
 	public function infast_sanitize_inputs( $input ) {
 		$output = array();
 		foreach( $input as $idx => $value ) {
-
-			// error_log( 'FIXME LOG infast_sanitize_inputs idx:'. $idx . ' value:'. $value );
-
 			if( isset( $input[$idx] ) ) {
 		    	if ( $idx == 'client_secret' ) {
 					$infast_api = Infast_Woocommerce_Api::getInstance();

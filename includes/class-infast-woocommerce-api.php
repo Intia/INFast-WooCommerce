@@ -57,8 +57,6 @@ class Infast_Woocommerce_Api {
 	    $iv = substr( hash( 'sha256', $salt2 ), 0, 16 ); // sha256 is hash_hmac_algo
 	    $output = openssl_encrypt( $string, $encrypt_method, $key, 0, $iv );
 	    $output = base64_encode( $output );
-        
-        // error_log( 'FIXME LOG ENCRYPT: salt1 : ' . $salt1 . ', salt2: ' . $salt2 . ', value: ' . $string . ', encrpt: ' .$output);
 
 	    return '~' . $output;
 	}
@@ -79,8 +77,6 @@ class Infast_Woocommerce_Api {
         $key = hash( 'sha256', $salt1 );
         $iv = substr( hash( 'sha256',  $salt2 ), 0, 16 ); // sha256 is hash_hmac_algo
         $output = openssl_decrypt( base64_decode( $string ), $encrypt_method, $key, 0, $iv );
-        
-        // error_log( 'FIXME LOG DECRYPT: salt1 : ' . $salt1 . ', salt2: ' . $salt2 . ', value: ' . $string . ', decrpt: ' .$output);
 
         return $output;
     }
