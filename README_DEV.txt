@@ -30,6 +30,13 @@ To run WP-CLI commands launch an interactive terminal with the "configure" conta
 docker-compose run configure bash
 ```
 
+=== update docker image
+```sh
+docker-compose down
+docker-compose pull
+docker-compose up
+```
+
 === Configuration ===
 
 **Enable taxes:**
